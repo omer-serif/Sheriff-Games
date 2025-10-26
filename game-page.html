@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Uzay Macerası X | Sheriff Games</title>
+    <link rel="stylesheet" href="style.css"> 
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <header class="navbar">
+        <div class="logo">
+            <h1>SHERIFF GAMES</h1>
+        </div>
+        <nav class="nav-links">
+            <a href="index.html">Keşfet</a>
+            <a href="#">Oyunlar</a>
+            <a href="#">Oluştur</a>
+        </nav>
+        <div class="user-actions">
+            <input type="text" placeholder="Oyun ara..." class="search-box">
+            <a href="#" class="btn btn-primary">Giriş Yap</a>
+        </div>
+    </header>
+
+    <main class="game-detail-container container">
+        
+        <header class="game-header">
+            <h1>Uzay Macerası X</h1>
+            <p class="tagline">Galaksiler arası keşif, hayatta kalma ve gizem dolu bir macera.</p>
+        </header>
+
+        <section class="game-gallery">
+            <div class="slider-wrapper">
+                <div class="slider-track" id="slider-track">
+                    <div class="slide">
+                        <img src="images/fetihGörsel7.png" alt="Oyun Ekran Görüntüsü 1">
+                    </div>
+                    <div class="slide">
+                        <img src="images/fetihGörsel8.png" alt="Oyun Ekran Görüntüsü 2">
+                    </div>
+                    <div class="slide">
+                        <img src="images/fetihGörsel9.png" alt="Oyun Ekran Görüntüsü 3">
+                    </div>
+                </div>
+                
+                <button class="slider-btn prev-btn" onclick="moveSlider(-1)"><i class="fas fa-chevron-left"></i></button>
+                <button class="slider-btn next-btn" onclick="moveSlider(1)"><i class="fas fa-chevron-right"></i></button>
+            </div>
+        </section>
+
+        <section class="game-body-layout">
+            
+            <div class="game-description-column">
+                <div class="game-info-box">
+                    <h3>Oyun Hakkında</h3>
+                    <p>Uzay Macerası X, oyuncuları bilinmeyen bir galaksinin derinliklerine sürükleyen, yoğun bir hayatta kalma ve keşif oyunudur. İnsanlığın kayıp kolonisini bulma göreviyle yola çıkın, ancak sizi bekleyen tehlikeler ve kadim sırlar karşısında dikkatli olun.</p>
+                </div>
+
+                <div class="game-info-box categories">
+                    <h3>Kategoriler ve Etiketler</h3>
+                    <span class="category-tag">Aksiyon</span>
+                    <span class="category-tag">RPG</span>
+                    <span class="category-tag">Keşif</span>
+                    <span class="category-tag">Hayatta Kalma</span>
+                </div>
+            </div>
+
+            <aside class="game-purchase-sidebar">
+                <div class="purchase-box">
+                    <span class="price-label">Fiyat:</span>
+                    <span class="price-amount">$9.99</span>
+                    
+                    <a href="#" class="btn btn-primary buy-btn"><i class="fas fa-shopping-cart"></i> HEMEN SATIN AL</a>
+                    <a href="#" class="btn btn-secondary download-btn"><i class="fas fa-download"></i> DEMO İNDİR</a>
+                    
+                    <div class="details-summary">
+                        <p><strong>Yayıncı:</strong> Sheriff Games Studio</p>
+                        <p><strong>Yayın Tarihi:</strong> 15 Ekim 2025</p>
+                        <p><strong>Platform:</strong> Windows, Mac</p>
+                    </div>
+                </div>
+            </aside>
+        </section>
+
+        <section class="comments-section">
+            <h2>Kullanıcı Yorumları (56)</h2>
+
+            <div class="comment-form-box">
+                <form action="#" method="POST" class="comment-form">
+                    <textarea name="comment-text" placeholder="Bu oyun hakkında ne düşünüyorsunuz? Yorumunuzu buraya yazın..." rows="4" required class="comment-textarea"></textarea>
+                    <button type="submit" class="btn btn-primary comment-submit-btn">YORUMU GÖNDER</button>
+                </form>
+            </div>
+            
+            <div class="comments-list">
+                <div class="comment-item">
+                    <p class="comment-meta"><strong>OyuncuGalaksi</strong> <span class="time">5 saat önce</span></p>
+                    <p class="comment-text">Oyunun atmosferi harika, keşif hissi mükemmel verilmiş. Fiyatını kesinlikle hak ediyor!</p>
+                </div>
+
+                <div class="comment-item">
+                    <p class="comment-meta"><strong>CoderKedi</strong> <span class="time">1 gün önce</span></p>
+                    <p class="comment-text">Oynanış mekanikleri biraz karmaşık ama alışınca bırakılmıyor. Devam güncellemelerini sabırsızlıkla bekliyorum.</p>
+                </div>
+                
+                </div>
+        </section>
+
+    </main>
+
+   <footer class="footer">
+        <p>&copy; 2025 Sheriff Games. Tüm Hakları Saklıdır.</p>
+        <div class="footer-links">
+            <a href="#">Hakkımızda</a> |
+            <a href="#">Geliştiriciler</a> |
+            <a href="#">Destek</a>
+        </div>
+    </footer>
+    
+    <script>
+        const sliderTrack = document.getElementById('slider-track');
+        const slides = document.querySelectorAll('.slide');
+        const totalSlides = slides.length;
+        let currentSlide = 0;
+
+        function updateSlider() {
+            if (slides.length === 0) return;
+            const slideWidth = slides[0].clientWidth;
+            sliderTrack.style.transform = `translateX(${-slideWidth * currentSlide}px)`;
+        }
+
+        function moveSlider(direction) {
+            currentSlide += direction;
+
+            if (currentSlide < 0) {
+                currentSlide = totalSlides - 1;
+            } else if (currentSlide >= totalSlides) {
+                currentSlide = 0;
+            }
+            updateSlider();
+        }
+
+        window.addEventListener('resize', updateSlider);
+        window.addEventListener('load', updateSlider);
+    </script>
+</body>
+</html>

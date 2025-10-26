@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yeni Oyun Ekle - Sheriff Games</title>
+    <link rel="stylesheet" href="style.css"> 
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <header class="navbar">
+        <div class="logo">
+            <h1>SHERIFF GAMES</h1>
+        </div>
+        <nav class="nav-links">
+            <a href="index.html">Keşfet</a>
+            <a href="#">Oyunlar</a>
+            <a href="#">Oluştur</a>
+        </nav>
+        <div class="user-actions">
+            <input type="text" placeholder="Oyun ara..." class="search-box">
+            
+        </div>
+    </header>
+
+    <main class="create-game-container container">
+        <div class="create-game-card">
+            <h2>Yeni Oyununu Yayımla</h2>
+            <p class="subtitle">Oyununuz hakkında gerekli bilgileri doldurun ve Sheriff Games topluluğuyla paylaşın.</p>
+
+            <form action="#" method="POST" enctype="multipart/form-data">
+                
+                <section class="form-section">
+                    <h3>1. Temel Tanıtım</h3>
+                    <div class="form-group">
+                        <label for="game-title">Oyun Adı <span class="required">*</span></label>
+                        <input type="text" id="game-title" name="game-title" required placeholder="Oyununuzun benzersiz adı">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="short-description">Kısa Açıklama (Tanıtım Yazısı)</label>
+                        <input type="text" id="short-description" name="short-description" maxlength="150" placeholder="Oyunun tek cümlelik özeti (max 150 karakter)">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="description">Detaylı Açıklama</label>
+                        <textarea id="description" name="description" rows="8" placeholder="Oyunun hikayesi, oynanışı ve özellikleri"></textarea>
+                    </div>
+                </section>
+
+                <section class="form-section">
+                    <h3>2. Görseller ve Dosyalar</h3>
+                    
+                    <div class="form-group">
+                        <label for="cover-image">Oyun Kapak Görseli (Banner) <span class="required">*</span></label>
+                        <div class="file-upload-box">
+                            <input type="file" id="cover-image" name="cover-image" accept="image/*" required>
+                            <span class="file-label"><i class="fas fa-upload"></i> Kapak görselini seç (Önerilen: 1280x720)</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="screenshots">Ekran Görüntüleri/Videolar</label>
+                        <div class="file-upload-box multiple">
+                             <input type="file" id="screenshots" name="screenshots[]" accept="image/*,video/*" multiple>
+                             <span class="file-label"><i class="fas fa-images"></i> Birden fazla görsel/video yükle</span>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="game-file">Oyun Dosyası Yükle <span class="required">*</span></label>
+                        <div class="file-upload-box">
+                            <input type="file" id="game-file" name="game-file" required>
+                            <span class="file-label"><i class="fas fa-gamepad"></i> ZIP, EXE, veya WEB dosyalarını yükle</span>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="form-section last-section">
+                    <h3>3. Sınıflandırma ve Fiyatlandırma</h3>
+                    
+                    <div class="form-group">
+                        <label for="category">Kategori/Tür <span class="required">*</span></label>
+                        <select id="category" name="category" required>
+                            <option value="" disabled selected>Bir kategori seçin</option>
+                            <option value="action">Aksiyon</option>
+                            <option value="rpg">RPG</option>
+                            <option value="platformer">Platformer</option>
+                            <option value="strategy">Strateji</option>
+                            <option value="simulation">Simülasyon</option>
+                            <option value="puzzle">Bulmaca</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group price-group">
+                        <label for="price-type">Fiyatlandırma</label>
+                        <select id="price-type" name="price-type">
+                            <option value="free">Ücretsiz</option>
+                            <option value="paid">Ücretli (Fiyat Belirt)</option>
+                        </select>
+                        <input type="number" id="price-amount" name="price-amount" placeholder="0.00" step="0.01" min="0" style="display:none;">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label><input type="checkbox" id="early-access" name="early-access"> Erken Erişim (Early Access) olarak işaretle</label>
+                    </div>
+
+                </section>
+                
+                <button type="submit" class="btn btn-secondary publish-btn"><i class="fas fa-check"></i> Oyunu Yayımla</button>
+            </form>
+        </div>
+    </main>
+
+   <footer class="footer">
+        <p>&copy; 2025 Sheriff Games. Tüm Hakları Saklıdır.</p>
+        <div class="footer-links">
+            <a href="#">Hakkımızda</a> |
+            <a href="#">Geliştiriciler</a> |
+            <a href="#">Destek</a>
+        </div>
+    </footer>
+
+    <script>
+        document.getElementById('price-type').addEventListener('change', function() {
+            const priceInput = document.getElementById('price-amount');
+            if (this.value === 'paid') {
+                priceInput.style.display = 'inline-block';
+                priceInput.setAttribute('required', 'required');
+            } else {
+                priceInput.style.display = 'none';
+                priceInput.removeAttribute('required');
+            }
+        });
+    </script>
+</body>
+</html>

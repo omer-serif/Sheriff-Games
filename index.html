@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sheriff Games - Bağımsız Oyunlar Platformu</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <header class="navbar">
+        <div class="logo">
+            <h1>SHERIFF GAMES</h1>
+        </div>
+        <nav class="nav-links">
+            <a href="#">Keşfet</a>
+            <a href="#">Oyunlar</a>
+            <a href="#">Oluştur</a>
+            <a href="#">Topluluk</a>
+        </nav>
+        <div class="user-actions">
+            <input type="text" placeholder="Oyun ara..." class="search-box">
+            <a href="login.html" class="btn btn-primary">Giriş Yap</a>
+        </div>
+    </header>
+
+    <aside id="filter-sidebar" class="sidebar">
+        <button id="close-sidebar-btn" class="sidebar-toggle-btn close-btn">
+            <i class="fas fa-times"></i> Kapat
+        </button>
+        
+        <h3>Filtreler</h3>
+
+        <div class="filter-group">
+            <h4>Türler</h4>
+            <label><input type="checkbox"> Aksiyon</label>
+            <label><input type="checkbox"> RPG</label>
+            <label><input type="checkbox"> Platformer</label>
+            <label><input type="checkbox"> Bulmaca</label>
+            <label><input type="checkbox"> Strateji</label>
+        </div>
+
+        <div class="filter-group">
+            <h4>Fiyat</h4>
+            <label><input type="checkbox"> Ücretsiz</label>
+            <label><input type="checkbox"> Ücretli</label>
+            <label><input type="checkbox"> İndirimli</label>
+        </div>
+
+        <div class="filter-group">
+            <h4>Platform</h4>
+            <label><input type="checkbox"> Windows</label>
+            <label><input type="checkbox"> Mac</label>
+            <label><input type="checkbox"> Web (Tarayıcı)</label>
+        </div>
+        
+        <button class="btn btn-secondary apply-btn">Filtrele</button>
+    </aside>
+
+    <button id="open-sidebar-btn" class="sidebar-toggle-btn open-btn">
+         <i class="fas fa-filter"></i> Filtreler
+    </button>
+
+    <main class="content container">
+        
+
+        <section class="game-list">
+            <h2>Popüler Bağımsız Oyunlar</h2>
+            <div class="games-grid">
+                <div class="game-card">
+                    <img src="images/fetihPP.png" alt="Oyun Adı 1">
+                    <div class="card-info">
+                        <h4>Kayıp Orman</h4>
+                        <p class="tagline">Platformer / Ücretsiz</p>
+                        <span class="price">Ücretsiz</span>
+                    </div>
+                </div>
+
+                <div class="game-card">
+                    <img src="images/fetihPP.png" alt="Oyun Adı 2">
+                    <div class="card-info">
+                        <h4>Siber Dedektif</h4>
+                        <p class="tagline">Gizem / \$4.99</p>
+                        <span class="price">\$4.99</span>
+                    </div>
+                </div>
+
+                <div class="game-card">
+                    <img src="images/fetihPP.png" alt="Oyun Adı 3">
+                    <div class="card-info">
+                        <h4>Piksel Savaşları</h4>
+                        <p class="tagline">Aksiyon / Erken Erişim</p>
+                        <span class="price">Erken Erişim</span>
+                    </div>
+                </div>
+
+                <div class="game-card">
+                    <img src="images/fetihPP.png" alt="Oyun Adı 4">
+                    <div class="card-info">
+                        <h4>Rüya Dokumacı</h4>
+                        <p class="tagline">Bulmaca / Demo</p>
+                        <span class="price">Demo</span>
+                    </div>
+                </div>
+                
+            </div>
+        </section>
+
+        <section class="game-list new-games">
+            <h2>Yeni Yayımlananlar</h2>
+            <div class="games-grid">
+                 <div class="game-card">
+                    <img src="images/fetihPP.png" alt="Oyun Adı 5">
+                    <div class="card-info">
+                        <h4>Robot Yarışı</h4>
+                        <p class="tagline">Yarış / Ücretsiz</p>
+                        <span class="price">Ücretsiz</span>
+                    </div>
+                </div>
+                 <div class="game-card">
+                    <img src="images/fetihPP.png" alt="Oyun Adı 6">
+                    <div class="card-info">
+                        <h4>Vampir Avı</h4>
+                        <p class="tagline">RPG / \$9.99</p>
+                        <span class="price">\$9.99</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <div class="pagination-container container">
+        <div class="pagination">
+            <a href="#" class="page-link disabled"><i class="fas fa-chevron-left"></i> Önceki</a>
+            <a href="#" class="page-link active">1</a>
+            <a href="#" class="page-link">2</a>
+            <a href="#" class="page-link">3</a>
+            <span class="page-ellipsis">...</span>
+            <a href="#" class="page-link">10</a>
+            <a href="#" class="page-link">Sonraki <i class="fas fa-chevron-right"></i></a>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <p>&copy; 2025 Sheriff Games. Tüm Hakları Saklıdır.</p>
+        <div class="footer-links">
+            <a href="#">Hakkımızda</a> |
+            <a href="#">Geliştiriciler</a> |
+            <a href="#">Destek</a>
+        </div>
+    </footer>
+
+    <script>
+        document.getElementById('open-sidebar-btn').addEventListener('click', function() {
+            document.getElementById('filter-sidebar').classList.add('open');
+            document.body.classList.add('sidebar-open'); // Arka plan karartma/engelleme için
+        });
+
+        document.getElementById('close-sidebar-btn').addEventListener('click', function() {
+            document.getElementById('filter-sidebar').classList.remove('open');
+            document.body.classList.remove('sidebar-open');
+        });
+    </script>
+</body>
+</html>

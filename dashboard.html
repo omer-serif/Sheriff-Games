@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yayıncı Paneli - Sheriff Games</title>
+    <link rel="stylesheet" href="style.css"> 
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <header class="navbar">
+        <div class="logo">
+            <h1>SHERIFF GAMES</h1>
+        </div>
+        <nav class="nav-links">
+            <a href="index.html">Keşfet</a>
+            <a href="#">Oyunlar</a>
+            <a href="#">Oluştur</a>
+        </nav>
+        <div class="user-actions">
+            <input type="text" placeholder="Oyun ara..." class="search-box">
+            <a href="dashboard.html" class="btn btn-primary">Panelim</a>
+        </div>
+    </header>
+
+    <div class="dashboard-wrapper container">
+        
+        <aside class="dashboard-sidebar">
+            <div class="profile-info">
+                <img src="https://via.placeholder.com/60/e94560/e0e0e0?text=SG" alt="Profil Resmi" class="profile-avatar">
+                <h4>Sheriff Games Studio</h4>
+                <p>Yayıncı Seviyesi: Elit</p>
+            </div>
+            
+            <nav class="dashboard-nav">
+                <a href="#" class="nav-item active">
+                    <i class="fas fa-chart-line"></i> Genel Bakış
+                </a>
+                <a href="#" class="nav-item">
+                    <i class="fas fa-gamepad"></i> Oyunlarım
+                </a>
+                <a href="create-game.html" class="nav-item">
+                    <i class="fas fa-plus-circle"></i> Yeni Oyun Ekle
+                </a>
+                <a href="#" class="nav-item">
+                    <i class="fas fa-dollar-sign"></i> Finans/Ödemeler
+                </a>
+                <a href="#" class="nav-item">
+                    <i class="fas fa-cog"></i> Ayarlar
+                </a>
+            </nav>
+        </aside>
+
+        <main class="dashboard-content">
+            <h2>Genel Bakış</h2>
+
+            <section class="stats-grid">
+                <div class="stat-card">
+                    <i class="fas fa-download stat-icon"></i>
+                    <p class="stat-value">12,450</p>
+                    <p class="stat-label">Toplam İndirme</p>
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-users stat-icon"></i>
+                    <p class="stat-value">4.7K</p>
+                    <p class="stat-label">Aylık Aktif Kullanıcı</p>
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-coins stat-icon"></i>
+                    <p class="stat-value">$8,250</p>
+                    <p class="stat-label">Bu Ayki Gelir</p>
+                </div>
+                <div class="stat-card accent-card">
+                    <i class="fas fa-star stat-icon"></i>
+                    <p class="stat-value">4.8 / 5</p>
+                    <p class="stat-label">Ortalama Puan</p>
+                </div>
+            </section>
+
+            <section class="chart-panel panel">
+                <h3>Son 30 Günlük İndirme Grafiği</h3>
+                <div class="chart-placeholder">
+                    <p>[Buraya Grafik Eklenecek - Örn: Çizgi Grafik]</p>
+                </div>
+            </section>
+
+            <sec tion class="actions-and-notifications-grid">
+                <div class="quick-actions panel">
+                    <h3>Hızlı Eylemler</h3>
+                    <a href="create-game.html" class="action-btn btn btn-secondary"><i class="fas fa-plus"></i> Yeni Oyun Oluştur</a>
+                    <a href="#" class="action-btn btn btn-secondary"><i class="fas fa-bullhorn"></i> Duyuru Yayınla</a>
+                    <a href="#" class="action-btn btn btn-secondary"><i class="fas fa-money-check-alt"></i> Ödeme Talep Et</a>
+                </div>
+
+                <div class="notifications-panel panel">
+                    <h3>Son Bildirimler</h3>
+                    <ul class="notification-list">
+                        <li><i class="fas fa-bell"></i> "Uzay Macerası X" 1000 indirmeyi geçti!</li>
+                        <li><i class="fas fa-comment"></i> 3 yeni yorum bekliyor.</li>
+                        <li class="warning"><i class="fas fa-exclamation-triangle"></i> Ödeme ayarlarınızı güncelleyin.</li>
+                    </ul>
+                </div>
+            </section>
+        </main>
+    </div>
+
+   <footer class="footer">
+        <p>&copy; 2025 Sheriff Games. Tüm Hakları Saklıdır.</p>
+        <div class="footer-links">
+            <a href="#">Hakkımızda</a> |
+            <a href="#">Geliştiriciler</a> |
+            <a href="#">Destek</a>
+        </div>
+    </footer>
+</body>
+</html>
