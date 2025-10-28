@@ -7,6 +7,7 @@
     --accent-color: #e94560; /* Kırmızımsı Pembe (Vurgu) */
     --card-bg: #22223b; /* Kart Arka Planı */
     --secondary-accent: #6c63ff; /* İkincil Vurgu (Mor) */
+    --asset-tag-color: #00bcd4; /* Assetler için yeni renk (Turkuaz) */
 }
 
 * {
@@ -258,7 +259,7 @@ body.sidebar-open .content {
 /* =========================================== */
 /* GİRİŞ VE KAYDOL SAYFASI STİLLERİ            */
 /* =========================================== */
-.login-container {
+.login-container, .create-asset-container { 
     min-height: calc(100vh - 70px - 90px); 
     display: flex;
     justify-content: center;
@@ -350,10 +351,11 @@ body.sidebar-open .content {
 }
 
 /* =========================================== */
-/* YENİ OYUN EKLEME SAYFASI STİLLERİ           */
+/* YENİ OYUN/ASSET EKLEME SAYFASI STİLLERİ     */
 /* =========================================== */
 
-.create-game-container {
+/* Asset konteyneri, create-game konteyneri ile aynı stili kullanacak */
+.create-game-container, .create-asset-container {
     padding: 40px 20px;
 }
 
@@ -476,7 +478,7 @@ body.sidebar-open .content {
 }
 
 /* =========================================== */
-/* OYUN DETAY SAYFASI STİLLERİ                 */
+/* OYUN DETAY VE ASSET DETAY SAYFALARI STİLLERİ*/
 /* =========================================== */
 
 .game-header {
@@ -521,6 +523,18 @@ body.sidebar-open .content {
 .price-amount { display: block; font-size: 48px; color: var(--accent-color); font-weight: bold; margin-bottom: 20px; }
 .buy-btn, .download-btn { display: block; width: 100%; margin-bottom: 15px; padding: 15px; font-size: 18px; }
 
+/* Asset Tag'leri için Farklı Renk */
+.asset-tag {
+    display: inline-block;
+    background-color: #333;
+    color: var(--asset-tag-color, #00bcd4); /* Turkuaz tonu */
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 14px;
+    margin-right: 8px;
+    margin-bottom: 8px;
+}
+
 .comments-section { margin-top: 50px; padding-top: 20px; border-top: 2px solid var(--card-bg); }
 .comment-form-box { background-color: var(--card-bg); padding: 20px; border-radius: 8px; margin-bottom: 30px; }
 .comment-form { display: flex; flex-direction: column; }
@@ -541,10 +555,9 @@ body.sidebar-open .content {
     align-items: flex-start;
     padding-top: 40px;
     padding-bottom: 40px;
-    min-height: calc(100vh - 70px - 90px); /* Navbar ve Footer hariç minimum yükseklik */
+    min-height: calc(100vh - 70px - 90px);
 }
 
-/* Panel Başlıkları için Genel Stil */
 .panel h3 {
     color: white;
     font-size: 20px;
@@ -553,7 +566,6 @@ body.sidebar-open .content {
     padding-bottom: 8px;
 }
 
-/* Sol Sidebar (Menü) */
 .dashboard-sidebar {
     flex-basis: 280px;
     min-width: 280px;
@@ -561,7 +573,7 @@ body.sidebar-open .content {
     padding: 20px;
     border-radius: 8px;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-    position: sticky; /* Sayfa kaydırılsa bile menü sabit kalsın */
+    position: sticky;
     top: 90px;
 }
 
@@ -739,7 +751,7 @@ body.sidebar-open .content {
 /* YENİ SAYFALAMA (PAGINATION) STİLLERİ        */
 /* =========================================== */
 .pagination-container {
-    padding-top: 0; /* İçerik ile footer arasına yerleşeceği için üst padding'i kaldır */
+    padding-top: 0;
     padding-bottom: 40px;
     text-align: center;
 }
@@ -773,7 +785,7 @@ body.sidebar-open .content {
 }
 
 .page-link.active {
-    background-color: var(--secondary-accent); /* Mor vurgu */
+    background-color: var(--secondary-accent);
     color: white;
     pointer-events: none;
     cursor: default;
@@ -848,7 +860,7 @@ body.sidebar-open .content {
     .search-box { width: 150px; }
     .games-grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
 
-    /* Oyun Detay Sayfası Tablet */
+    /* Oyun/Asset Detay Sayfası Tablet */
     .game-body-layout { flex-direction: column; }
     .game-purchase-sidebar { min-width: 100%; order: -1; margin-bottom: 20px; }
     .game-gallery { height: 400px; }
@@ -866,7 +878,7 @@ body.sidebar-open .content {
     
     /* Sayfalama Tablet */
     .pagination {
-        flex-wrap: wrap; /* Tablette çok fazla link varsa alta geçsin */
+        flex-wrap: wrap; 
     }
     .page-link {
         padding: 8px 12px;
@@ -901,7 +913,7 @@ body.sidebar-open .content {
     /* Login/Create Mobil Kart */
     .login-card, .create-game-card { padding: 25px 15px; margin: 0 10px; }
     
-    /* Oyun Detay Mobil */
+    /* Oyun/Asset Detay Mobil */
     .game-gallery { height: 250px; }
     .slide img { height: 250px; }
     .comment-submit-btn { align-self: stretch; }
@@ -920,6 +932,6 @@ body.sidebar-open .content {
         padding: 6px 10px;
     }
     .page-ellipsis {
-        display: none; /* Mobilde ellipsis'i gizle */
+        display: none;
     }
 }

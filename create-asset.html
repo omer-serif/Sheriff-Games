@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yeni Asset Yükle - Sheriff Games</title>
+    <link rel="stylesheet" href="style.css"> 
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <header class="navbar">
+        <div class="logo">
+            <h1>SHERIFF GAMES</h1>
+        </div>
+        <nav class="nav-links">
+            <a href="index.html">Keşfet</a>
+            <a href="#">Oyunlar</a>
+            <a href="#">Assetler</a> <a href="#">Oluştur</a>
+        </nav>
+        <div class="user-actions">
+            <input type="text" placeholder="Asset ara..." class="search-box">
+            <a href="dashboard.html" class="btn btn-primary">Panelim</a>
+        </div>
+    </header>
+
+    <main class="create-asset-container container">
+        <div class="create-game-card">
+            <h2>Yeni Asset'i Yükle</h2>
+            <p class="subtitle">Oyunlarınızda kullanılabilecek görsel, ses veya kod varlığını paylaşın.</p>
+
+            <form action="#" method="POST" enctype="multipart/form-data">
+                
+                <section class="form-section">
+                    <h3>1. Asset Tanıtımı</h3>
+                    <div class="form-group">
+                        <label for="asset-title">Asset Adı <span class="required">*</span></label>
+                        <input type="text" id="asset-title" name="asset-title" required placeholder="Asset'in kısa ve açıklayıcı adı">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="short-description">Kısa Açıklama (Özet)</label>
+                        <input type="text" id="short-description" name="short-description" maxlength="150" placeholder="Asset'in kullanım alanı özeti (max 150 karakter)">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="description">Detaylı Açıklama</label>
+                        <textarea id="description" name="description" rows="8" placeholder="Asset'in içeriği, lisansı ve kullanım talimatları"></textarea>
+                    </div>
+                </section>
+
+                <section class="form-section">
+                    <h3>2. Görseller ve Asset Dosyası</h3>
+                    
+                    <div class="form-group">
+                        <label for="cover-image">Asset Önizleme Görseli <span class="required">*</span></label>
+                        <div class="file-upload-box">
+                            <input type="file" id="cover-image" name="cover-image" accept="image/*" required>
+                            <span class="file-label"><i class="fas fa-upload"></i> Önizleme görselini seç (Asset'i gösteren bir resim)</span>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="asset-file">Asset Dosyasını Yükle <span class="required">*</span></label>
+                        <div class="file-upload-box">
+                            <input type="file" id="asset-file" name="asset-file" required>
+                            <span class="file-label"><i class="fas fa-file-archive"></i> ZIP, PNG, FBX veya kod dosyalarını yükle</span>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="form-section last-section">
+                    <h3>3. Sınıflandırma ve Fiyatlandırma</h3>
+                    
+                    <div class="form-group">
+                        <label for="asset-type">Asset Türü <span class="required">*</span></label>
+                        <select id="asset-type" name="asset-type" required>
+                            <option value="" disabled selected>Bir asset türü seçin</option>
+                            <option value="2d_sprite">2D Sprite/Görsel</option>
+                            <option value="3d_model">3D Model</option>
+                            <option value="audio">Ses/Müzik</option>
+                            <option value="code">Kod Parçacığı (Script)</option>
+                            <option value="texture">Doku/Materyal</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group price-group">
+                        <label for="price-type">Fiyatlandırma</label>
+                        <select id="price-type" name="price-type">
+                            <option value="free">Ücretsiz</option>
+                            <option value="paid">Ücretli (Fiyat Belirt)</option>
+                        </select>
+                        <input type="number" id="price-amount" name="price-amount" placeholder="0.00" step="0.01" min="0" style="display:none;">
+                    </div>
+                </section>
+                
+                <button type="submit" class="btn btn-secondary publish-btn"><i class="fas fa-box-open"></i> Asset'i Yayımla</button>
+            </form>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <p>&copy; 2025 Sheriff Games. Tüm Hakları Saklıdır.</p>
+        <div class="footer-links">
+            <a href="#">Hakkımızda</a> |
+            <a href="#">Geliştiriciler</a> |
+            <a href="#">Destek</a>
+        </div>
+    </footer>
+
+    <script>
+        document.getElementById('price-type').addEventListener('change', function() {
+            const priceInput = document.getElementById('price-amount');
+            if (this.value === 'paid') {
+                priceInput.style.display = 'inline-block';
+                priceInput.setAttribute('required', 'required');
+            } else {
+                priceInput.style.display = 'none';
+                priceInput.removeAttribute('required');
+            }
+        });
+    </script>
+</body>
+</html>
