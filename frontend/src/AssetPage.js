@@ -1,97 +1,150 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import './App.css'; 
-import GameCard from './GameCard'; // Kart tasarımını buradan çekiyoruz (Aynı tasarım)
 
-function AssetPage() {
-  // Sidebar'ın açık/kapalı durumu
-  const [sidebarAcik, setSidebarAcik] = useState(false);
+function GamePage() {
+  // SLIDER İÇİN STATE VE MANTIK
+  const [currentSlide, setCurrentSlide] = useState(0);
 
-  // GEÇİCİ ASSET VERİLERİ (Veritabanı bağlanana kadar)
-  const assetler = [
-    { id: 1, baslik: "Kayıp Orman Seti", tur: "2D Environment", fiyatEtiketi: "Ücretsiz", resim: "https://via.placeholder.com/300x180?text=Asset+1" },
-    { id: 2, baslik: "Siber UI Paketi", tur: "UI/GUI", fiyatEtiketi: "$4.99", resim: "https://via.placeholder.com/300x180?text=Asset+2" },
-    { id: 3, baslik: "Piksel Karakterler", tur: "2D Character", fiyatEtiketi: "Erken Erişim", resim: "https://via.placeholder.com/300x180?text=Asset+3" },
-    { id: 4, baslik: "RPG İkon Seti", tur: "Icons", fiyatEtiketi: "Demo", resim: "https://via.placeholder.com/300x180?text=Asset+4" },
-    { id: 5, baslik: "Robot Ses Efektleri", tur: "Audio", fiyatEtiketi: "Ücretsiz", resim: "https://via.placeholder.com/300x180?text=Asset+5" },
-    { id: 6, baslik: "Dungeon 3D Model", tur: "3D Model", fiyatEtiketi: "$9.99", resim: "https://via.placeholder.com/300x180?text=Asset+6" },
+  // Gösterilecek resimlerin listesi (Bunu ileride veritabanından çekeceğiz)
+  const images = [
+      "images/fetihGörsel7.png",
+      "images/fetihGörsel8.png",
+      "images/fetihGörsel9.png"
   ];
 
+  const moveSlider = (direction) => {
+    let newSlide = currentSlide + direction;
+
+    if (newSlide < 0) {
+        newSlide = images.length - 1; // Başa dön
+    } else if (newSlide >= images.length) {
+        newSlide = 0; // Sona dön
+    }
+    setCurrentSlide(newSlide);
+  };
+
   return (
-    <div className={`assets-page ${sidebarAcik ? 'sidebar-open' : ''}`}>
-        
+    <div className="game-detail-body">
         {/* NAVBAR */}
-        <header className="navbar">
-            <div className="logo">
-                <h1>SHERIFF GAMES</h1>
-            </div>
-            <nav className="nav-links">
-                <Link to="/">Keşfet</Link>
-                <Link to="#">Oyunlar</Link>
-                <Link to="/assets">Assetler</Link> {/* Linki düzelttik */}
-                <Link to="/create-game">Oluştur</Link>
-            </nav>
-            <div className="user-actions">
-                <input type="text" placeholder="Asset ara..." className="search-box" />
-                <Link to="/login" className="btn btn-primary">Giriş Yap</Link>
-            </div>
-        </header>
+        {/* GÜNCELLENMİŞ NAVBAR */}
+     <header className="navbar">
+             <div className="logo">
+               <h1>SHERIFF GAMES</h1>
+             </div>
+             <nav className="nav-links">
+               {/* Ana Sayfa */}
+               <Link to="/">Oyunlar</Link> 
+               
+               {/* Assetler Sayfası */}
+               <Link to="/assets">Assetler</Link>
+               
+               {/* Oyun Ekleme Sayfası */}
+               <Link to="/create-game">Oyun Yükle</Link>
+               
+               {/* Asset Ekleme Sayfası (Yeni ekledik) */}
+               <Link to="/create-asset">Asset Yükle</Link>
+             </nav>
+             
+             <div className="user-actions">
+               <input type="text" placeholder="Oyun ara..." className="search-box" />
+               
+               {/* Giriş Yap yerine Panelim butonunu gösteriyoruz */}
+               <Link to="/dashboard" className="btn btn-primary">Panelim</Link>
+               {/* Eğer çıkış yapmış gibi görünmek istersen aşağıdakini kullan: */}
+               {/* <Link to="/login" className="btn btn-primary">Giriş Yap</Link> */}
+             </div>
+           </header>
 
-        {/* SIDEBAR (Filtreler) */}
-        <aside id="filter-sidebar" className={`sidebar ${sidebarAcik ? 'open' : ''}`}>
-            <button 
-                id="close-sidebar-btn" 
-                className="sidebar-toggle-btn close-btn"
-                onClick={() => setSidebarAcik(false)}
-            >
-                <i className="fas fa-times"></i> Kapat
-            </button>
+        <main className="game-detail-container container">
             
-            <h3>Filtreler</h3>
+            <header className="game-header">
+                <h1>Uzay Macerası X</h1>
+                <p className="tagline">Galaksiler arası keşif, hayatta kalma ve gizem dolu bir macera.</p>
+            </header>
 
-            <div className="filter-group">
-                <h4>Türler</h4>
-                <label><input type="checkbox" /> 2D</label>
-                <label><input type="checkbox" /> 3D</label>
-                <label><input type="checkbox" /> UI/GUI</label>
-                <label><input type="checkbox" /> Background</label>
-                <label><input type="checkbox" /> 2D Character</label>
-            </div>
+            {/* REACT SLIDER */}
+            <section className="game-gallery">
+                <div className="slider-wrapper" style={{ overflow: 'hidden', position: 'relative' }}>
+                    <div 
+                        className="slider-track" 
+                        style={{ 
+                            display: 'flex', 
+                            transition: 'transform 0.5s ease-in-out',
+                            transform: `translateX(-${currentSlide * 100}%)` // React ile kaydırma işlemi
+                        }}
+                    >
+                        {images.map((imgSrc, index) => (
+                            <div className="slide" key={index} style={{ minWidth: '100%' }}>
+                                <img src={imgSrc} alt={`Oyun Ekran Görüntüsü ${index + 1}`} style={{ width: '100%', display: 'block' }} />
+                            </div>
+                        ))}
+                    </div>
+                    
+                    <button className="slider-btn prev-btn" onClick={() => moveSlider(-1)}><i className="fas fa-chevron-left"></i></button>
+                    <button className="slider-btn next-btn" onClick={() => moveSlider(1)}><i className="fas fa-chevron-right"></i></button>
+                </div>
+            </section>
 
-            <div className="filter-group">
-                <h4>Fiyat</h4>
-                <label><input type="checkbox" /> Ücretsiz</label>
-                <label><input type="checkbox" /> Ücretli</label>
-            </div>
-            
-            <button className="btn btn-secondary apply-btn">Filtrele</button>
-        </aside>
+            <section className="game-body-layout">
+                
+                <div className="game-description-column">
+                    <div className="game-info-box">
+                        <h3>Oyun Hakkında</h3>
+                        <p>Uzay Macerası X, oyuncuları bilinmeyen bir galaksinin derinliklerine sürükleyen, yoğun bir hayatta kalma ve keşif oyunudur. İnsanlığın kayıp kolonisini bulma göreviyle yola çıkın, ancak sizi bekleyen tehlikeler ve kadim sırlar karşısında dikkatli olun.</p>
+                    </div>
 
-        {/* SIDEBAR AÇMA BUTONU */}
-        <button 
-            id="open-sidebar-btn" 
-            className="sidebar-toggle-btn open-btn"
-            onClick={() => setSidebarAcik(true)}
-        >
-             <i className="fas fa-filter"></i> Filtreler
-        </button>
+                    <div className="game-info-box categories">
+                        <h3>Kategoriler ve Etiketler</h3>
+                        <span className="category-tag">Aksiyon</span>
+                        <span className="category-tag">RPG</span>
+                        <span className="category-tag">Keşif</span>
+                        <span className="category-tag">Hayatta Kalma</span>
+                    </div>
+                </div>
 
-        {/* ANA İÇERİK */}
-        <main className="content container">
-            
-            <section className="game-list">
-                <h2>Tüm Assetler</h2>
-                <div className="games-grid">
-                    {/* GameCard bileşenini Assetler için tekrar kullanıyoruz */}
-                    {assetler.map((asset) => (
-                        <GameCard key={asset.id} oyun={asset} />
-                    ))}
+                <aside className="game-purchase-sidebar">
+                    <div className="purchase-box">
+                        <span className="price-label">Fiyat:</span>
+                        <span className="price-amount">$9.99</span>
+                        
+                        <Link to="#" className="btn btn-primary buy-btn"><i className="fas fa-shopping-cart"></i> HEMEN SATIN AL</Link>
+                        <Link to="#" className="btn btn-secondary download-btn"><i className="fas fa-download"></i> DEMO İNDİR</Link>
+                        
+                        <div className="details-summary">
+                            <p><strong>Yayıncı:</strong> Sheriff Games Studio</p>
+                            <p><strong>Yayın Tarihi:</strong> 15 Ekim 2025</p>
+                            <p><strong>Platform:</strong> Windows, Mac</p>
+                        </div>
+                    </div>
+                </aside>
+            </section>
+
+            <section className="comments-section">
+                <h2>Kullanıcı Yorumları (56)</h2>
+
+                <div className="comment-form-box">
+                    <form className="comment-form" onSubmit={(e) => e.preventDefault()}>
+                        <textarea name="comment-text" placeholder="Bu oyun hakkında ne düşünüyorsunuz? Yorumunuzu buraya yazın..." rows="4" required className="comment-textarea"></textarea>
+                        <button type="submit" className="btn btn-primary comment-submit-btn">YORUMU GÖNDER</button>
+                    </form>
+                </div>
+                
+                <div className="comments-list">
+                    <div className="comment-item">
+                        <p className="comment-meta"><strong>OyuncuGalaksi</strong> <span className="time">5 saat önce</span></p>
+                        <p className="comment-text">Oyunun atmosferi harika, keşif hissi mükemmel verilmiş. Fiyatını kesinlikle hak ediyor!</p>
+                    </div>
+
+                    <div className="comment-item">
+                        <p className="comment-meta"><strong>CoderKedi</strong> <span className="time">1 gün önce</span></p>
+                        <p className="comment-text">Oynanış mekanikleri biraz karmaşık ama alışınca bırakılmıyor. Devam güncellemelerini sabırsızlıkla bekliyorum.</p>
+                    </div>
                 </div>
             </section>
 
         </main>
 
-        {/* FOOTER */}
         <footer className="footer">
             <p>&copy; 2025 Sheriff Games. Tüm Hakları Saklıdır.</p>
             <div className="footer-links">
@@ -104,4 +157,4 @@ function AssetPage() {
   );
 }
 
-export default AssetPage;
+export default GamePage;

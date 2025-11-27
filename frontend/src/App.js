@@ -11,6 +11,7 @@ import CreateGame from './CreateGame';
 import CreateAsset from './CreateAsset';
 import GamePage from './GamePage';
 import AssetPage from './AssetPage';
+import Assets from './Assets';
 
 function App() {
   return (
@@ -25,6 +26,7 @@ function App() {
           <Route path="/create-asset" element={<CreateAsset />} />
           <Route path='/game-page' element={<GamePage/>}/>
           <Route path='/asset-page' element={<AssetPage/>}/>
+          <Route path='/assets'element={<Assets/>}/>
         </Routes>
       </div>
     </Router>

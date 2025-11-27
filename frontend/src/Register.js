@@ -29,7 +29,7 @@ function Register() {
                 <h1>SHERIFF GAMES</h1>
             </div>
             <nav className="nav-links">
-                <a href="/">Keşfet</a>
+                <a href="#">Keşfet</a>
                 <a href="#">Oyunlar</a>
                 <a href="#">Oluştur</a>
             </nav>

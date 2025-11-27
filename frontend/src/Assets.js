@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import './App.css'; // CSS dosyamızı çağırdık
 import GameCard from './GameCard'; // Az önce oluşturduğumuz kart bileşeni
 
-function Home() {
+function Assets() {
   // Sidebar'ın açık olup olmadığını kontrol eden değişken
   const [sidebarAcik, setSidebarAcik] = useState(false);
 
@@ -30,7 +30,7 @@ function Home() {
           <h1>SHERIFF GAMES</h1>
         </div>
         <nav className="nav-links">
-          <a href="/game-page">Oyunlar</a>
+          <a href="/">Oyunlar</a>
           <a href="/assets">Assetler</a>
           <a href="/create-game">Oyun Yükle</a>
           <a href="/create-asset">Asset Oluştur</a>
@@ -115,4 +115,4 @@ function Home() {
   );
 }
 
-export default Home;
+export default Assets;

@@ -9,21 +9,34 @@ function CreateAsset() {
   return (
     <div className="create-asset-body">
         {/* NAVBAR */}
-        <header className="navbar">
-            <div className="logo">
+        {/* GÜNCELLENMİŞ NAVBAR */}
+      <header className="navbar">
+              <div className="logo">
                 <h1>SHERIFF GAMES</h1>
-            </div>
-            <nav className="nav-links">
-                <Link to="/">Keşfet</Link>
-                <Link to="#">Oyunlar</Link>
-                <Link to="/create-asset">Assetler</Link>
-                <Link to="/create-game">Oluştur</Link>
-            </nav>
-            <div className="user-actions">
-                <input type="text" placeholder="Asset ara..." className="search-box" />
+              </div>
+              <nav className="nav-links">
+                {/* Ana Sayfa */}
+                <Link to="/">Oyunlar</Link> 
+                
+                {/* Assetler Sayfası */}
+                <Link to="/assets">Assetler</Link>
+                
+                {/* Oyun Ekleme Sayfası */}
+                <Link to="/create-game">Oyun Yükle</Link>
+                
+                {/* Asset Ekleme Sayfası (Yeni ekledik) */}
+                <Link to="/create-asset">Asset Yükle</Link>
+              </nav>
+              
+              <div className="user-actions">
+                <input type="text" placeholder="Oyun ara..." className="search-box" />
+                
+                {/* Giriş Yap yerine Panelim butonunu gösteriyoruz */}
                 <Link to="/dashboard" className="btn btn-primary">Panelim</Link>
-            </div>
-        </header>
+                {/* Eğer çıkış yapmış gibi görünmek istersen aşağıdakini kullan: */}
+                {/* <Link to="/login" className="btn btn-primary">Giriş Yap</Link> */}
+              </div>
+            </header>
 
         {/* ANA İÇERİK */}
         <main className="create-asset-container container">
