@@ -2,27 +2,29 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import './App.css';
 
-// Sayfalarımızı çağırıyoruz
+// Sayfalar
 import Home from './Home';
 import Login from './Login';
 import Register from './Register';
+import Dashboard from './Dashboard';
+import CreateGame from './CreateGame';
+import CreateAsset from './CreateAsset';
+import GamePage from './GamePage';
+import AssetPage from './AssetPage';
 
 function App() {
   return (
     <Router>
       <div className="App">
         <Routes>
-          {/* Tarayıcıda hangi adrese gidilirse o bileşeni göster */}
-          
-          {/* Ana Sayfa ( / ) */}
           <Route path="/" element={<Home />} />
-          
-          {/* Giriş Yap ( /login ) */}
           <Route path="/login" element={<Login />} />
-          
-          {/* Kaydol ( /register ) */}
           <Route path="/register" element={<Register />} />
-          
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/create-game" element={<CreateGame />} />
+          <Route path="/create-asset" element={<CreateAsset />} />
+          <Route path='/game-page' element={<GamePage/>}/>
+          <Route path='/asset-page' element={<AssetPage/>}/>
         </Routes>
       </div>
     </Router>
