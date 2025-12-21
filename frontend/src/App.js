@@ -9,9 +9,9 @@ import Register from './Register';
 import Dashboard from './Dashboard';
 import CreateGame from './CreateGame';
 import CreateAsset from './CreateAsset';
+import Assets from './Assets';
 import GamePage from './GamePage';
 import AssetPage from './AssetPage';
-import Assets from './Assets';
 
 function App() {
   return (
@@ -24,8 +24,8 @@ function App() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/create-game" element={<CreateGame />} />
           <Route path="/create-asset" element={<CreateAsset />} />
-          <Route path='/game-page' element={<GamePage/>}/>
-          <Route path='/asset-page' element={<AssetPage/>}/>
+          <Route path="/game/:id" element={<GamePage />} />
+          <Route path="/asset/:id" element={<AssetPage />} />
           <Route path='/assets'element={<Assets/>}/>
         </Routes>
       </div>

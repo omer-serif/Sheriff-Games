@@ -46,6 +46,45 @@ app.get('/games', (req, res) => {
         return res.json(data);
     });
 });
+
+
+// TEK BİR OYUNUN DETAYINI GETİR (ID'ye göre)
+app.get('/games/:id', (req, res) => {
+    const gameID = req.params.id; // URL'deki sayıyı alıyoruz
+    const sql = "SELECT * FROM Games WHERE gamesID = ?";
+
+    db.query(sql, [gameID], (err, data) => {
+        if(err) return res.status(500).json(err);
+        
+        // Veri dizi olarak gelir [ {oyun...} ]. Biz ilkini alıp obje olarak dönelim.
+        return res.json(data[0]); 
+    });
+});
+
+
+// 1. TÜM ASSETLERİ GETİR (Tür isimleriyle birlikte)
+app.get('/assets', (req, res) => {
+    // Assets tablosunu AssetTypes ile birleştiriyoruz (JOIN)
+    const sql = "SELECT Assets.*, AssetTypes.type as typeName FROM Assets JOIN AssetTypes ON Assets.assetType = AssetTypes.assetTypeID";
+    
+    db.query(sql, (err, data) => {
+        if(err) return res.status(500).json(err);
+        return res.json(data);
+    });
+});
+
+// 2. TEK BİR ASSET GETİR (ID'ye göre)
+app.get('/assets/:id', (req, res) => {
+    const assetID = req.params.id;
+    const sql = "SELECT Assets.*, AssetTypes.type as typeName FROM Assets JOIN AssetTypes ON Assets.assetType = AssetTypes.assetTypeID WHERE assetID = ?";
+
+    db.query(sql, [assetID], (err, data) => {
+        if(err) return res.status(500).json(err);
+        return res.json(data[0]); // İlk sonucu döndür
+    });
+});
+
+
 app.post('/login', (req, res) => {
     // Frontend'den gelen veriler:
     // req.body.email -> Kullanıcı buraya e-posta YA DA kullanıcı adı yazmış olabilir.
