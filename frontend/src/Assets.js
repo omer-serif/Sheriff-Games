@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import './App.css'; // CSS dosyamızı çağırdık
 import GameCard from './GameCard'; // Az önce oluşturduğumuz kart bileşeni
+import Navbar from './navbar';
 
 function Assets() {
   // Sidebar'ın açık olup olmadığını kontrol eden değişken
@@ -25,21 +26,7 @@ function Assets() {
     <div className={`App ${sidebarAcik ? 'sidebar-open' : ''}`}>
       
       {/* NAVBAR */}
-      <header className="navbar">
-        <div className="logo">
-          <h1>SHERIFF GAMES</h1>
-        </div>
-        <nav className="nav-links">
-          <a href="/">Oyunlar</a>
-          <a href="/assets">Assetler</a>
-          <a href="/create-game">Oyun Yükle</a>
-          <a href="/create-asset">Asset Oluştur</a>
-        </nav>
-        <div className="user-actions">
-          <input type="text" placeholder="Oyun ara..." className="search-box" />
-          <a href="/login" className="btn btn-primary">Giriş Yap</a>
-        </div>
-      </header>
+      <Navbar />
 
       {/* SIDEBAR (Filtreleme) */}
       <aside id="filter-sidebar" className={`sidebar ${sidebarAcik ? 'open' : ''}`}>

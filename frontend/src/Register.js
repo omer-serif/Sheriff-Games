@@ -1,7 +1,11 @@
 import React, { useState } from 'react';
-import './App.css'; // Stilleri çekiyoruz
+import { Link, useNavigate } from 'react-router-dom'; // Yönlendirme için
+import Navbar from './navbar';
+import './App.css'; 
 
 function Register() {
+  const navigate = useNavigate(); // Kayıt bitince sayfayı değiştirmek için
+
   // Form verilerini tutacak değişkenler
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
@@ -9,34 +13,45 @@ function Register() {
   const [confirmPassword, setConfirmPassword] = useState('');
 
   // Kayıt ol butonuna basınca çalışacak fonksiyon
-  const handleRegister = (e) => {
-    e.preventDefault(); // Sayfa yenilenmesini engelle
+  const handleRegister = async (e) => {
+    e.preventDefault(); 
     
-    // Basit bir şifre kontrolü
+    // 1. Şifre Kontrolü
     if(password !== confirmPassword) {
         alert("Şifreler birbiriyle uyuşmuyor!");
         return;
     }
 
-    console.log("Kayıt Verileri:", { username, email, password });
-    // BURAYA İLERİDE VERİTABANI KODU GELECEK
+    try {
+        console.log("Kayıt verisi gönderiliyor...");
+        
+        // 2. Backend'e İstek Atıyoruz
+        const response = await fetch('http://localhost:3001/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, email, password })
+        });
+
+        const result = await response.json();
+
+        // 3. Sonucu Kontrol Ediyoruz
+        if (result.status === "Success") {
+            alert("Kayıt Başarılı! Giriş sayfasına yönlendiriliyorsunuz...");
+            navigate('/login'); // Başarılıysa Giriş sayfasına git
+        } else {
+            alert(result.message); // Hata varsa mesajı göster (Örn: Mail kullanılıyor)
+        }
+
+    } catch (error) {
+        console.error("Hata:", error);
+        alert("Sunucuya bağlanılamadı.");
+    }
   };
 
   return (
     <div className="register-page-wrapper">
-        <header className="navbar">
-            <div className="logo">
-                <h1>SHERIFF GAMES</h1>
-            </div>
-            <nav className="nav-links">
-                <a href="#">Keşfet</a>
-                <a href="#">Oyunlar</a>
-                <a href="#">Oluştur</a>
-            </nav>
-            <div className="user-actions">
-                <a href="/login" className="btn btn-primary">Giriş Yap</a>
-            </div>
-        </header>
+        {/* YENİ NAVBAR'I BURAYA DA EKLEDİK */}
+        <Navbar />
 
         <main className="login-container">
             <div className="login-card register-card">
@@ -95,18 +110,13 @@ function Register() {
                 </form>
 
                 <div className="login-footer">
-                    <p>Zaten bir hesabın var mı? <a href="/login" className="register-link">Giriş Yap</a></p>
+                    <p>Zaten bir hesabın var mı? <Link to="/login" className="register-link">Giriş Yap</Link></p>
                 </div>
             </div>
         </main>
 
         <footer className="footer">
             <p>&copy; 2025 Sheriff Games. Tüm Hakları Saklıdır.</p>
-            <div className="footer-links">
-                <a href="#">Hakkımızda</a> |
-                <a href="#">Geliştiriciler</a> |
-                <a href="#">Destek</a>
-            </div>
         </footer>
     </div>
   );

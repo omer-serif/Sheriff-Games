@@ -1,116 +1,109 @@
-import React, { useState } from 'react';
-import './App.css'; // CSS dosyamızı çağırdık
-import GameCard from './GameCard'; // Az önce oluşturduğumuz kart bileşeni
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import Navbar from './navbar';
+import GameCard from './GameCard';
+import './App.css';
 
 function Home() {
-  // Sidebar'ın açık olup olmadığını kontrol eden değişken
   const [sidebarAcik, setSidebarAcik] = useState(false);
+  const [oyunlar, setOyunlar] = useState([]); 
 
-  // GEÇİCİ VERİTABANI (Daha sonra burayı SQL'den çekeceğiz)
-  const oyunlar = [
-    { id: 1, baslik: "Kayıp Orman", tur: "Platformer", fiyatEtiketi: "Ücretsiz", resim: "images/fetihPP.png" },
-    { id: 2, baslik: "Siber Dedektif", tur: "Gizem", fiyatEtiketi: "$4.99", resim: "images/fetihPP.png" },
-    { id: 3, baslik: "Piksel Savaşları", tur: "Aksiyon", fiyatEtiketi: "Erken Erişim", resim: "images/fetihPP.png" },
-    { id: 4, baslik: "Rüya Dokumacı", tur: "Bulmaca", fiyatEtiketi: "Demo", resim: "images/fetihPP.png" },
-    { id: 5, baslik: "Robot Yarışı", tur: "Yarış", fiyatEtiketi: "Ücretsiz", resim: "images/fetihPP.png" },
-    { id: 6, baslik: "Vampir Avı", tur: "RPG", fiyatEtiketi: "$9.99", resim: "images/fetihPP.png" },
-  ];
+  // --- SAYFALAMA (PAGINATION) AYARLARI ---
+  const [currentPage, setCurrentPage] = useState(1); // Başlangıç sayfası: 1
+  const itemsPerPage = 12; // Sayfa başına kaç oyun gözükecek?
 
-  // Sidebar açma/kapama fonksiyonu
+  // Veriyi Çek
+  useEffect(() => {
+    fetch('http://localhost:3001/games')
+      .then(res => res.json())
+      .then(data => {
+        setOyunlar(data);
+      })
+      .catch(err => console.log("Hata:", err));
+  }, []);
+
+  // --- MATEMATİKSEL HESAPLAMALAR ---
+  // Bu sayfada gösterilecek son oyunun index'i (Örn: 1. sayfa için 1 * 12 = 12)
+  const indexOfLastItem = currentPage * itemsPerPage;
+  // Bu sayfada gösterilecek ilk oyunun index'i (Örn: 12 - 12 = 0)
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  // Tüm oyunlar listesinden sadece o aralığı kesip alıyoruz
+  const currentGames = oyunlar.slice(indexOfFirstItem, indexOfLastItem);
+
+  // Toplam sayfa sayısını bul (Örn: 15 oyun varsa 15/12 = 1.25 -> Yukarı yuvarla -> 2 Sayfa)
+  const totalPages = Math.ceil(oyunlar.length / itemsPerPage);
+
+  // Sayfa değiştirme fonksiyonu
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
+
   const toggleSidebar = () => {
     setSidebarAcik(!sidebarAcik);
   };
 
   return (
-    <div className={`App ${sidebarAcik ? 'sidebar-open' : ''}`}>
+    <div className={`home-page ${sidebarAcik ? 'sidebar-open' : ''}`}>
       
-      {/* NAVBAR */}
-      <header className="navbar">
-        <div className="logo">
-          <h1>SHERIFF GAMES</h1>
-        </div>
-        <nav className="nav-links">
-          <a href="/game-page">Oyunlar</a>
-          <a href="/assets">Assetler</a>
-          <a href="/create-game">Oyun Yükle</a>
-          <a href="/create-asset">Asset Oluştur</a>
-        </nav>
-        <div className="user-actions">
-          <input type="text" placeholder="Oyun ara..." className="search-box" />
-          <a href="/login" className="btn btn-primary">Giriş Yap</a>
-        </div>
-      </header>
+      <Navbar />
 
-      {/* SIDEBAR (Filtreleme) */}
       <aside id="filter-sidebar" className={`sidebar ${sidebarAcik ? 'open' : ''}`}>
-        <button id="close-sidebar-btn" className="sidebar-toggle-btn close-btn" onClick={toggleSidebar}>
+        <button className="sidebar-toggle-btn close-btn" onClick={toggleSidebar}>
           <i className="fas fa-times"></i> Kapat
         </button>
-        
         <h3>Filtreler</h3>
-
         <div className="filter-group">
           <h4>Türler</h4>
           <label><input type="checkbox" /> Aksiyon</label>
           <label><input type="checkbox" /> RPG</label>
-          <label><input type="checkbox" /> Platformer</label>
-          <label><input type="checkbox" /> Bulmaca</label>
-          <label><input type="checkbox" /> Strateji</label>
         </div>
-
-        <div className="filter-group">
-          <h4>Fiyat</h4>
-          <label><input type="checkbox" /> Ücretsiz</label>
-          <label><input type="checkbox" /> Ücretli</label>
-          <label><input type="checkbox" /> İndirimli</label>
-        </div>
-
         <button className="btn btn-secondary apply-btn">Filtrele</button>
       </aside>
 
-      {/* SIDEBAR AÇMA BUTONU */}
-      <button id="open-sidebar-btn" className="sidebar-toggle-btn open-btn" onClick={toggleSidebar}>
+      <button className="sidebar-toggle-btn open-btn" onClick={toggleSidebar}>
          <i className="fas fa-filter"></i> Filtreler
       </button>
 
-      {/* ANA İÇERİK */}
       <main className="content container">
-        
         <section className="game-list">
-          <h2>Popüler Bağımsız Oyunlar</h2>
+          <h2>Mağaza</h2>
           <div className="games-grid">
-            {/* Burada tek tek div yazmak yerine döngü (map) kullanıyoruz */}
-            {oyunlar.map((oyun) => (
-              <GameCard key={oyun.id} oyun={oyun} />
+            
+            {/* DİKKAT: Artık 'oyunlar' yerine 'currentGames' map ediyoruz */}
+            {currentGames.map((veri) => (
+              <Link to={`/game/${veri.gamesID}`} key={veri.gamesID} style={{textDecoration:'none', color:'inherit'}}>
+                  <GameCard oyun={{
+                      baslik: veri.gameName,
+                      fiyatEtiketi: veri.gamePrice === 0 ? "Ücretsiz" : `$${veri.gamePrice}`,
+                      tur: "Genel", 
+                      resim: "images/fetihPP.png" 
+                  }} />
+              </Link>
             ))}
-          </div>
-        </section>
 
+          </div>
+
+          {/* --- SAYFALAMA BUTONLARI --- */}
+          {totalPages > 1 && ( // Eğer sadece 1 sayfa varsa butonları gösterme
+            <div className="pagination-container">
+                {/* 1'den totalPages'e kadar sayıları oluşturup buton yapıyoruz */}
+                {Array.from({ length: totalPages }, (_, i) => (
+                    <button 
+                        key={i + 1} 
+                        onClick={() => paginate(i + 1)}
+                        className={`page-btn ${currentPage === i + 1 ? 'active' : ''}`}
+                    >
+                        {i + 1}
+                    </button>
+                ))}
+            </div>
+          )}
+
+        </section>
       </main>
 
-      {/* PAGINATION */}
-      <div className="pagination-container container">
-        <div className="pagination">
-          <a href="#" className="page-link disabled"><i className="fas fa-chevron-left"></i> Önceki</a>
-          <a href="#" className="page-link active">1</a>
-          <a href="#" className="page-link">2</a>
-          <a href="#" className="page-link">3</a>
-          <span className="page-ellipsis">...</span>
-          <a href="#" className="page-link">10</a>
-          <a href="#" className="page-link">Sonraki <i className="fas fa-chevron-right"></i></a>
-        </div>
-      </div>
-
-      {/* FOOTER */}
       <footer className="footer">
         <p>&copy; 2025 Sheriff Games. Tüm Hakları Saklıdır.</p>
-        <div className="footer-links">
-          <a href="#">Hakkımızda</a> |
-          <a href="#">Geliştiriciler</a> |
-          <a href="#">Destek</a>
-        </div>
       </footer>
-
     </div>
   );
 }

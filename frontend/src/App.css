@@ -747,23 +747,64 @@ body.sidebar-open .content {
     font-weight: bold;
 }
 
-/* =========================================== */
-/* YENİ SAYFALAMA (PAGINATION) STİLLERİ        */
-/* =========================================== */
+/* =========================================
+   SAYFALAMA (PAGINATION) TASARIMI - YENİ
+   ========================================= */
+
 .pagination-container {
-    padding-top: 0;
-    padding-bottom: 40px;
-    text-align: center;
+  display: flex;
+  justify-content: center; /* Sayfanın tam ortasına hizalar */
+  align-items: center;
+  margin-top: 50px;       /* Üstteki oyunlardan uzaklık */
+  margin-bottom: 50px;    /* Alttaki footer'dan uzaklık */
+  gap: 12px;              /* Butonlar arasındaki boşluk */
 }
 
-.pagination {
-    display: inline-flex;
-    justify-content: center;
-    align-items: center;
-    background-color: var(--card-bg);
-    border-radius: 4px;
-    overflow: hidden;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+.page-btn {
+  background-color: #16213e; /* Kartların arka planına yakın koyu lacivert */
+  color: #a0a0b0;            /* Sönük gri-beyaz yazı */
+  border: 2px solid #0f3460; /* Koyu çerçeve */
+  min-width: 45px;           /* Kareye yakın ama geniş */
+  height: 45px;
+  border-radius: 8px;        /* Hafif yuvarlatılmış köşeler */
+  font-size: 18px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); /* Yumuşak animasyon */
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3); /* Hafif gölge */
+  
+  /* Yazıyı ortalamak için */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Üzerine Gelince (Hover) */
+.page-btn:hover {
+  background-color: #e94560; /* Şerif Kırmızısı */
+  border-color: #e94560;
+  color: #fff;
+  transform: translateY(-5px); /* Yukarı doğru hafif zıplama efekti */
+  box-shadow: 0 8px 15px rgba(233, 69, 96, 0.4); /* Neon parlama efekti */
+}
+
+/* Seçili Sayfa (Active) */
+.page-btn.active {
+  background-color: #e94560; /* Şerif Kırmızısı */
+  border-color: #e94560;
+  color: #ffffff;
+  pointer-events: none; /* Tıklanmayı engelle (zaten o sayfadayız) */
+  box-shadow: 0 0 20px rgba(233, 69, 96, 0.6); /* Daha güçlü bir parlama */
+  transform: scale(1.1); /* Birazcık daha büyük dursun */
+}
+
+/* Mobilde butonlar çok sıkışmasın */
+@media (max-width: 768px) {
+  .page-btn {
+    min-width: 35px;
+    height: 35px;
+    font-size: 14px;
+  }
 }
 
 .page-link {
@@ -934,4 +975,6 @@ body.sidebar-open .content {
     .page-ellipsis {
         display: none;
     }
+
+    
 }
