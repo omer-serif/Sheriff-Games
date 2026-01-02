@@ -9,26 +9,31 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Uploads klasörünü statik yap (Resimler buradan sunulur)
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// Resim Klasörü
+const uploadDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir);
+}
+app.use('/uploads', express.static(uploadDir));
 
-// 1. VERİTABANI
+// 1. VERİTABANI BAĞLANTISI
 const db = mysql.createConnection({
     host: 'localhost',
     user: 'root',
     password: 'berkay4115',
-    database: 'SheriffGames'
+    database: 'SheriffGames',
+    multipleStatements: true
 });
 
 db.connect((err) => {
-    if (err) console.error('HATA: Veritabanına bağlanılamadı!', err);
-    else console.log('BAŞARILI: MySQL Veritabanına bağlandı!');
+    if (err) {
+        console.error('❌ HATA: Veritabanına bağlanılamadı!', err);
+        return;
+    }
+    console.log('✅ BAŞARILI: MySQL Veritabanına bağlandı!');
 });
 
-// 2. MULTER (Resim Yükleme)
-const uploadDir = path.join(__dirname, 'uploads');
-if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir);
-
+// 2. MULTER
 const storage = multer.diskStorage({
     destination: (req, file, cb) => cb(null, 'uploads/'),
     filename: (req, file, cb) => {
@@ -41,92 +46,212 @@ const upload = multer({ storage: storage });
 // 3. API YOLLARI
 app.get('/', (req, res) => res.json("Backend Çalışıyor!"));
 
-// Listeler
+// --- OYUN KATEGORİLERİ ---
+app.get('/game-types', (req, res) => {
+    const sql = "SELECT * FROM gametypes"; 
+    db.query(sql, (err, data) => {
+        if(err) return res.status(500).json(err);
+        return res.json(data);
+    });
+});
+
+// --- ASSET KATEGORİLERİ ---
+app.get('/asset-types', (req, res) => {
+    const sql = "SELECT * FROM assettypes"; 
+    db.query(sql, (err, data) => {
+        if(err) return res.status(500).json(err);
+        return res.json(data);
+    });
+});
+
+// --- OYUN LİSTELEME ---
 app.get('/games', (req, res) => {
-    db.query("SELECT * FROM Games", (err, data) => {
-        if(err) return res.json(err);
+    const { search, category, priceType } = req.query;
+    console.log("🔍 OYUN İSTEĞİ:", req.query);
+
+    let sql = `
+        SELECT 
+            G.gamesID, G.gameName, G.gamePrice, G.gameDescription, G.gameImage, G.gameFile,
+            GROUP_CONCAT(GT.gameType SEPARATOR ', ') as categoryNames 
+        FROM Games G
+        LEFT JOIN gametypes_game GTG ON G.gamesID = GTG.game
+        LEFT JOIN gametypes GT ON GTG.gameType = GT.gameTypeID
+        WHERE 1=1 
+    `;
+    
+    let params = [];
+
+    if (search && search.trim() !== '') {
+        sql += " AND G.gameName LIKE ?";
+        params.push(`%${search}%`);
+    }
+
+    if (priceType && priceType !== 'all') {
+        if (priceType === 'free') sql += " AND (G.gamePrice = 0 OR G.gamePrice IS NULL)";
+        else if (priceType === 'paid') sql += " AND G.gamePrice > 0";
+    }
+
+    if (category && category !== 'All') {
+        sql += ` AND G.gamesID IN (SELECT game FROM gametypes_game WHERE gameType = (SELECT gameTypeID FROM gametypes WHERE gameType = ?))`;
+        params.push(category);
+    }
+
+    sql += ` GROUP BY G.gamesID, G.gameName, G.gamePrice, G.gameDescription, G.gameImage, G.gameFile`;
+    sql += " ORDER BY G.gamesID DESC";
+
+    db.query(sql, params, (err, data) => {
+        if (err) return res.status(500).json({ error: err.sqlMessage });
         return res.json(data);
     });
 });
+
+// --- ASSET LİSTELEME (DÜZELTİLDİ: AT.type kullanıldı) ---
 app.get('/assets', (req, res) => {
-    db.query("SELECT Assets.*, AssetTypes.type as typeName FROM Assets JOIN AssetTypes ON Assets.assetType = AssetTypes.assetTypeID", (err, data) => {
-        if(err) return res.json(err);
+    const { search, type, priceType } = req.query;
+    
+    // DİKKAT: Veritabanında sütun adı 'type' olduğu için AT.type yazıyoruz.
+    let sql = `
+        SELECT 
+            A.assetID, A.assetName, A.assetPrice, A.assetDescription, A.assetImage, A.assetFile,
+            GROUP_CONCAT(AT.type SEPARATOR ', ') as typeNames 
+        FROM Assets A
+        LEFT JOIN assettypes_asset ATA ON A.assetID = ATA.asset
+        LEFT JOIN assettypes AT ON ATA.assetType = AT.assetTypeID
+        WHERE 1=1
+    `;
+    
+    let params = [];
+
+    if (search && search.trim() !== '') {
+        sql += " AND A.assetName LIKE ?";
+        params.push(`%${search}%`);
+    }
+    if (priceType && priceType !== 'all') {
+        if (priceType === 'free') sql += " AND (A.assetPrice = 0 OR A.assetPrice IS NULL)";
+        else if (priceType === 'paid') sql += " AND A.assetPrice > 0";
+    }
+
+    // Kategori Filtresi
+    if (type && type !== 'All') {
+        sql += " AND A.assetID IN (SELECT asset FROM assettypes_asset WHERE assetType = ?)";
+        params.push(type);
+    }
+
+    // Explicit GROUP BY
+    sql += " GROUP BY A.assetID, A.assetName, A.assetPrice, A.assetDescription, A.assetImage, A.assetFile";
+    
+    sql += " ORDER BY A.assetID DESC";
+
+    db.query(sql, params, (err, data) => {
+        if (err) {
+            console.error("❌ ASSET SQL HATASI:", err.sqlMessage);
+            return res.status(500).json({ error: err.sqlMessage });
+        }
         return res.json(data);
     });
 });
 
-// Detaylar
+// DETAYLAR
 app.get('/games/:id', (req, res) => {
-    db.query("SELECT * FROM Games WHERE gamesID = ?", [req.params.id], (err, data) => {
+    const sql = `
+        SELECT G.*, GROUP_CONCAT(GT.gameType SEPARATOR ', ') as categoryNames 
+        FROM Games G
+        LEFT JOIN gametypes_game GTG ON G.gamesID = GTG.game
+        LEFT JOIN gametypes GT ON GTG.gameType = GT.gameTypeID
+        WHERE G.gamesID = ?
+        GROUP BY G.gamesID, G.gameName, G.gamePrice, G.gameDescription, G.gameImage, G.gameFile
+    `;
+    db.query(sql, [req.params.id], (err, data) => {
         if(err) return res.status(500).json(err);
-        return res.json(data[0]);
+        return res.json(data[0]); 
     });
 });
+
 app.get('/assets/:id', (req, res) => {
-    db.query("SELECT Assets.*, AssetTypes.type as typeName FROM Assets JOIN AssetTypes ON Assets.assetType = AssetTypes.assetTypeID WHERE assetID = ?", [req.params.id], (err, data) => {
+    // Burada da AT.type kullanıldı
+    const sql = `
+        SELECT A.*, GROUP_CONCAT(AT.type SEPARATOR ', ') as typeNames 
+        FROM Assets A
+        LEFT JOIN assettypes_asset ATA ON A.assetID = ATA.asset
+        LEFT JOIN assettypes AT ON ATA.assetType = AT.assetTypeID
+        WHERE A.assetID = ?
+        GROUP BY A.assetID, A.assetName, A.assetPrice, A.assetDescription, A.assetImage, A.assetFile
+    `;
+    db.query(sql, [req.params.id], (err, data) => {
         if(err) return res.status(500).json(err);
         return res.json(data[0]);
     });
 });
 
-// 4. EKLEME İŞLEMLERİ (Transaction)
+// EKLEME İŞLEMLERİ
 app.post('/api/add-game', upload.fields([{ name: 'coverImage' }, { name: 'gameFile' }]), (req, res) => {
-    const { gameName, gameDescription, gamePrice, category, userID } = req.body;
+    const { gameName, gameDescription, gamePrice, gameTypes, userID } = req.body; 
     const coverImage = req.files['coverImage'] ? req.files['coverImage'][0].filename : null;
     const gameFile = req.files['gameFile'] ? req.files['gameFile'][0].filename : null;
 
+    let typeIDs = [];
+    try { typeIDs = JSON.parse(gameTypes); } catch (e) {}
+
     db.beginTransaction((err) => {
         if (err) return res.status(500).json(err);
-        const sqlGame = "INSERT INTO Games (`gameName`, `gameDescription`, `gamePrice`, `gameImage`, `gameFile`, `category`) VALUES (?)";
-        const values = [gameName, gameDescription, gamePrice, coverImage, gameFile, category];
-        
-        db.query(sqlGame, [values], (err, result) => {
-            if (err) return db.rollback(() => res.status(500).json(err));
+        const sqlGame = "INSERT INTO Games (`gameName`, `gameDescription`, `gamePrice`, `gameImage`, `gameFile`) VALUES (?)";
+        db.query(sqlGame, [[gameName, gameDescription, gamePrice, coverImage, gameFile]], (err, result) => {
+            if (err) return db.rollback(() => res.status(500).json({error: err.message}));
             const newID = result.insertId;
-            const sqlRel = "INSERT INTO UserGameDevelops (`user`, `game`, `publicationDate`) VALUES (?, ?, NOW())";
-            
+            const sqlRel = "INSERT INTO UserGameDevelops (`user`, `game`) VALUES (?, ?)";
             db.query(sqlRel, [userID, newID], (err) => {
-                if (err) return db.rollback(() => res.status(500).json(err));
-                db.commit((err) => {
-                    if (err) return db.rollback(() => res.status(500).json(err));
-                    res.json({ status: "Success", message: "Oyun yüklendi!" });
-                });
+                if (err) return db.rollback(() => res.status(500).json({error: err.message}));
+                if (typeIDs.length > 0) {
+                    const typeValues = typeIDs.map(id => [newID, id]); 
+                    db.query("INSERT INTO gametypes_game (`game`, `gameType`) VALUES ?", [typeValues], (err) => {
+                        if (err) return db.rollback(() => res.status(500).json({error: err.message}));
+                        db.commit((err) => { if(err) return db.rollback(() => res.status(500).json(err)); res.json({ status: "Success" }); });
+                    });
+                } else {
+                    db.commit((err) => { if(err) return db.rollback(() => res.status(500).json(err)); res.json({ status: "Success" }); });
+                }
             });
         });
     });
 });
 
 app.post('/api/add-asset', upload.fields([{ name: 'coverImage' }, { name: 'assetFile' }]), (req, res) => {
-    const { assetName, assetDescription, assetPrice, assetType, userID } = req.body;
+    const { assetName, assetDescription, assetPrice, assetTypes, userID } = req.body;
     const assetImage = req.files['coverImage'] ? req.files['coverImage'][0].filename : null;
     const assetFile = req.files['assetFile'] ? req.files['assetFile'][0].filename : null;
 
+    let typeIDs = [];
+    try { typeIDs = JSON.parse(assetTypes); } catch (e) { console.error("JSON Parse Hatası:", e); }
+
     db.beginTransaction((err) => {
         if (err) return res.status(500).json(err);
-        const sqlAsset = "INSERT INTO Assets (`assetName`, `assetDescription`, `assetPrice`, `assetType`, `assetImage`, `assetFile`) VALUES (?)";
-        const values = [assetName, assetDescription, assetPrice, assetType, assetImage, assetFile];
-
-        db.query(sqlAsset, [values], (err, result) => {
-            if (err) return db.rollback(() => res.status(500).json(err));
+        
+        const sql = "INSERT INTO Assets (`assetName`, `assetDescription`, `assetPrice`, `assetImage`, `assetFile`) VALUES (?)";
+        db.query(sql, [[assetName, assetDescription, assetPrice, assetImage, assetFile]], (err, result) => {
+            if (err) return db.rollback(() => res.status(500).json({error: err.message}));
             const newID = result.insertId;
-            const sqlRel = "INSERT INTO UserAssetDevelops (`user`, `asset`, `publicationDate`) VALUES (?, ?, NOW())";
-
+            const sqlRel = "INSERT INTO UserAssetDevelops (`user`, `asset`) VALUES (?, ?)";
             db.query(sqlRel, [userID, newID], (err) => {
-                if (err) return db.rollback(() => res.status(500).json(err));
-                db.commit((err) => {
-                    if (err) return db.rollback(() => res.status(500).json(err));
-                    res.json({ status: "Success", message: "Asset yüklendi!" });
-                });
+                if (err) return db.rollback(() => res.status(500).json({error: err.message}));
+                
+                if (typeIDs.length > 0) {
+                    const typeValues = typeIDs.map(id => [newID, id]);
+                    db.query("INSERT INTO assettypes_asset (`asset`, `assetType`) VALUES ?", [typeValues], (err) => {
+                        if (err) return db.rollback(() => res.status(500).json({error: err.message}));
+                        db.commit((err) => { if(err) return db.rollback(() => res.status(500).json(err)); res.json({ status: "Success" }); });
+                    });
+                } else {
+                    db.commit((err) => { if(err) return db.rollback(() => res.status(500).json(err)); res.json({ status: "Success" }); });
+                }
             });
         });
     });
 });
 
-// 5. AUTH
+// AUTH
 app.post('/login', (req, res) => {
     const { email, password } = req.body;
-    const sql = "SELECT * FROM User WHERE (userMail = ? OR userName = ?) AND userPassword = ?";
-    db.query(sql, [email, email, password], (err, data) => {
+    db.query("SELECT * FROM User WHERE (userMail = ? OR userName = ?) AND userPassword = ?", [email, email, password], (err, data) => {
         if(err) return res.status(500).json("Hata");
         if(data.length > 0) return res.json({ status: "Success", user: data[0] });
         return res.status(401).json({ status: "Error", message: "Hatalı bilgi" });
@@ -135,14 +260,13 @@ app.post('/login', (req, res) => {
 
 app.post('/register', (req, res) => {
     const { username, email, password } = req.body;
-    const sql = "INSERT INTO User (`userName`, `userMail`, `userPassword`) VALUES (?)";
-    db.query(sql, [[username, email, password]], (err) => {
+    db.query("INSERT INTO User (`userName`, `userMail`, `userPassword`) VALUES (?)", [[username, email, password]], (err) => {
         if(err) return res.status(500).json({ status: "Error" });
         return res.json({ status: "Success" });
     });
 });
 
-// 6. DASHBOARD VERİLERİ
+// DASHBOARD
 app.get('/api/my-games/:userID', (req, res) => {
     const sql = `SELECT Games.* FROM Games JOIN UserGameDevelops ON Games.gamesID = UserGameDevelops.game WHERE UserGameDevelops.user = ?`;
     db.query(sql, [req.params.userID], (err, data) => {
@@ -150,24 +274,19 @@ app.get('/api/my-games/:userID', (req, res) => {
         return res.json(data);
     });
 });
-
 app.get('/api/my-assets/:userID', (req, res) => {
-    const sql = `SELECT Assets.*, AssetTypes.type as typeName FROM Assets JOIN UserAssetDevelops ON Assets.assetID = UserAssetDevelops.asset JOIN AssetTypes ON Assets.assetType = AssetTypes.assetTypeID WHERE UserAssetDevelops.user = ?`;
+    const sql = `SELECT Assets.* FROM Assets JOIN UserAssetDevelops ON Assets.assetID = UserAssetDevelops.asset WHERE UserAssetDevelops.user = ?`;
     db.query(sql, [req.params.userID], (err, data) => {
         if(err) return res.status(500).json(err);
         return res.json(data);
     });
 });
-
 app.get('/api/my-sales/:userID', (req, res) => {
     const sellerID = req.params.userID;
     const sql = `
-        SELECT 'Game' as itemType, G.gameName as itemName, G.gamePrice as price, U.userName as buyerName, UBG.purchaseDate as saleDate 
-        FROM UserByGame UBG JOIN Games G ON UBG.game = G.gamesID JOIN UserGameDevelops UGD ON G.gamesID = UGD.game JOIN User U ON UBG.user = U.userID WHERE UGD.user = ?
+        SELECT 'Game' as itemType, G.gameName as itemName, G.gamePrice as price, U.userName as buyerName, UBG.purchaseDate as saleDate FROM UserByGame UBG JOIN Games G ON UBG.game = G.gamesID JOIN UserGameDevelops UGD ON G.gamesID = UGD.game JOIN User U ON UBG.user = U.userID WHERE UGD.user = ?
         UNION ALL
-        SELECT 'Asset' as itemType, A.assetName as itemName, A.assetPrice as price, U.userName as buyerName, UBA.purchaseDate as saleDate
-        FROM UserByAsset UBA JOIN Assets A ON UBA.asset = A.assetID JOIN UserAssetDevelops UAD ON A.assetID = UAD.asset JOIN User U ON UBA.user = U.userID WHERE UAD.user = ?
-        ORDER BY saleDate DESC`;
+        SELECT 'Asset' as itemType, A.assetName as itemName, A.assetPrice as price, U.userName as buyerName, UBA.purchaseDate as saleDate FROM UserByAsset UBA JOIN Assets A ON UBA.asset = A.assetID JOIN UserAssetDevelops UAD ON A.assetID = UAD.asset JOIN User U ON UBA.user = U.userID WHERE UAD.user = ? ORDER BY saleDate DESC`;
     db.query(sql, [sellerID, sellerID], (err, data) => {
         if(err) return res.status(500).json(err);
         return res.json(data);
@@ -183,45 +302,34 @@ app.put('/api/update-item', (req, res) => {
     });
 });
 
-// 7. SİLME İŞLEMİ (404 HATASINI ÇÖZEN KISIM BURASI)
 app.delete('/api/delete-item', (req, res) => {
     const { type, id } = req.body;
-    
     db.beginTransaction((err) => {
         if(err) return res.status(500).json(err);
-
         if(type === 'Game') {
-            const sqlDev = "DELETE FROM UserGameDevelops WHERE game = ?";
-            const sqlBuy = "DELETE FROM UserByGame WHERE game = ?";
-            const sqlGame = "DELETE FROM Games WHERE gamesID = ?";
-            
-            db.query(sqlDev, [id], (err) => {
+            db.query("DELETE FROM gametypes_game WHERE game = ?", [id], (err) => {
                 if(err) return db.rollback(() => res.status(500).json(err));
-                db.query(sqlBuy, [id], (err) => {
+                db.query("DELETE FROM UserGameDevelops WHERE game = ?", [id], (err) => {
                     if(err) return db.rollback(() => res.status(500).json(err));
-                    db.query(sqlGame, [id], (err) => {
+                    db.query("DELETE FROM UserByGame WHERE game = ?", [id], (err) => {
                         if(err) return db.rollback(() => res.status(500).json(err));
-                        db.commit((err) => {
+                        db.query("DELETE FROM Games WHERE gamesID = ?", [id], (err) => {
                             if(err) return db.rollback(() => res.status(500).json(err));
-                            res.json({ status: "Success" });
+                            db.commit((err) => { if(err) return db.rollback(() => res.status(500).json(err)); res.json({ status: "Success" }); });
                         });
                     });
                 });
             });
         } else if (type === 'Asset') {
-            const sqlDev = "DELETE FROM UserAssetDevelops WHERE asset = ?";
-            const sqlBuy = "DELETE FROM UserByAsset WHERE asset = ?";
-            const sqlAsset = "DELETE FROM Assets WHERE assetID = ?";
-
-            db.query(sqlDev, [id], (err) => {
+            db.query("DELETE FROM assettypes_asset WHERE asset = ?", [id], (err) => {
                 if(err) return db.rollback(() => res.status(500).json(err));
-                db.query(sqlBuy, [id], (err) => {
+                db.query("DELETE FROM UserAssetDevelops WHERE asset = ?", [id], (err) => {
                     if(err) return db.rollback(() => res.status(500).json(err));
-                    db.query(sqlAsset, [id], (err) => {
+                    db.query("DELETE FROM UserByAsset WHERE asset = ?", [id], (err) => {
                         if(err) return db.rollback(() => res.status(500).json(err));
-                        db.commit((err) => {
+                        db.query("DELETE FROM Assets WHERE assetID = ?", [id], (err) => {
                             if(err) return db.rollback(() => res.status(500).json(err));
-                            res.json({ status: "Success" });
+                            db.commit((err) => { if(err) return db.rollback(() => res.status(500).json(err)); res.json({ status: "Success" }); });
                         });
                     });
                 });

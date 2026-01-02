@@ -4,7 +4,6 @@ import Navbar from './navbar';
 import './App.css';
 
 // --- İNTERNET GEREKTİRMEYEN GÖMÜLÜ RESİM (Base64) ---
-// Bu kod gri bir kutu içinde "Resim Yok" yazar. İnternet olmasa da çalışır.
 const FALLBACK_IMAGE = "data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22300%22%20height%3D%22150%22%20viewBox%3D%220%200%20300%20150%22%3E%3Crect%20fill%3D%22%2322223b%22%20width%3D%22300%22%20height%3D%22150%22%2F%3E%3Ctext%20fill%3D%22%23e94560%22%20font-family%3D%22sans-serif%22%20font-size%3D%2220%22%20dy%3D%2210.5%22%20font-weight%3D%22bold%22%20x%3D%2250%25%22%20y%3D%2250%25%22%20text-anchor%3D%22middle%22%3EResim%20Yok%3C%2Ftext%3E%3C%2Fsvg%3E";
 
 function Dashboard() {
@@ -18,9 +17,11 @@ function Dashboard() {
   const [activeTab, setActiveTab] = useState('overview'); 
   const [loading, setLoading] = useState(true);
 
+  // MODAL STATE'LERİ
   const [editingItem, setEditingItem] = useState(null); 
   const [editForm, setEditForm] = useState({ name: '', description: '', price: '' });
   const [deletingItem, setDeletingItem] = useState(null);
+  const [showCreateModal, setShowCreateModal] = useState(false); // Yeni Ekleme Modalı
 
   // --- 1. VERİ ÇEKME ---
   useEffect(() => {
@@ -47,20 +48,15 @@ function Dashboard() {
 
   }, [navigate]);
 
-  // --- 2. GÖRSEL YÖNETİMİ (KESİN ÇÖZÜM) ---
+  // --- 2. GÖRSEL YÖNETİMİ ---
   const getImageSrc = (imageName) => {
-      // Eğer veritabanında resim adı yoksa veya "null" ise direkt fallback döndür
       if (!imageName || imageName === "null" || imageName === "") return FALLBACK_IMAGE;
-      
-      // Eğer eski verilerden kalma "http" ile başlayan bir link varsa (placeholder gibi), onu yoksay ve fallback döndür
       if (imageName.startsWith("http")) return FALLBACK_IMAGE;
-
-      // Normal şartlarda sunucudan iste
       return `http://localhost:3001/uploads/${imageName}`;
   };
 
   const handleImageError = (e) => {
-      e.target.onerror = null; // Sonsuz döngü engeli
+      e.target.onerror = null; 
       e.target.src = FALLBACK_IMAGE;
   };
 
@@ -120,13 +116,7 @@ function Dashboard() {
             })
         });
 
-        // 404 Hatasını yakalamak için kontrol
-        if (!response.ok) {
-            if(response.status === 404) {
-                throw new Error("404 Hatası: Backend kodun güncel değil! Sunucuyu yeniden başlatmalısın.");
-            }
-            throw new Error(`HTTP Hata: ${response.status}`);
-        }
+        if (!response.ok) throw new Error(`HTTP Hata: ${response.status}`);
 
         const result = await response.json();
 
@@ -173,9 +163,11 @@ function Dashboard() {
                 <button className={`nav-item ${activeTab === 'sales' ? 'active' : ''}`} onClick={() => setActiveTab('sales')}>
                     <i className="fas fa-wallet"></i> Satış Geçmişi
                 </button>
-                <Link to="/create-game" className="nav-item action">
+                
+                {/* YENİ EKLENEN BUTON: MODAL AÇIYOR */}
+                <button className="nav-item action" onClick={() => setShowCreateModal(true)}>
                     <i className="fas fa-plus"></i> Yeni İçerik Ekle
-                </Link>
+                </button>
             </nav>
         </aside>
 
@@ -314,7 +306,29 @@ function Dashboard() {
         </main>
       </div>
 
-      {/* MODALS */}
+      {/* --- YENİ İÇERİK SEÇİM MODALI --- */}
+      {showCreateModal && (
+        <div className="modal-overlay" onClick={() => setShowCreateModal(false)}>
+            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                <h3>Ne Yüklemek İstersiniz?</h3>
+                <div className="selection-buttons">
+                    <Link to="/create-game" className="selection-card">
+                        <i className="fas fa-gamepad"></i>
+                        <span>Oyun Yükle</span>
+                    </Link>
+                    <Link to="/create-asset" className="selection-card">
+                        <i className="fas fa-cubes"></i>
+                        <span>Asset Yükle</span>
+                    </Link>
+                </div>
+                <div style={{textAlign: 'center', marginTop: '20px'}}>
+                    <button onClick={() => setShowCreateModal(false)} className="btn-cancel">İptal</button>
+                </div>
+            </div>
+        </div>
+      )}
+
+      {/* DÜZENLEME MODALI */}
       {editingItem && (
         <div className="modal-overlay" onClick={() => setEditingItem(null)}>
             <div className="modal-content" onClick={(e) => e.stopPropagation()}>
@@ -344,6 +358,7 @@ function Dashboard() {
         </div>
       )}
 
+      {/* SİLME ONAY MODALI */}
       {deletingItem && (
         <div className="modal-overlay" onClick={() => setDeletingItem(null)}>
             <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{textAlign:'center', maxWidth:'400px'}}>

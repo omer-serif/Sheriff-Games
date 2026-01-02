@@ -4,101 +4,143 @@ import Navbar from './navbar';
 import GameCard from './GameCard';
 import './App.css'; 
 
+const FALLBACK_IMAGE = "data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22300%22%20height%3D%22150%22%20viewBox%3D%220%200%20300%20150%22%3E%3Crect%20fill%3D%22%2322223b%22%20width%3D%22300%22%20height%3D%22150%22%2F%3E%3Ctext%20fill%3D%22%2300bcd4%22%20font-family%3D%22sans-serif%22%20font-size%3D%2220%22%20dy%3D%2210.5%22%20font-weight%3D%22bold%22%20x%3D%2250%25%22%20y%3D%2250%25%22%20text-anchor%3D%22middle%22%3EAsset%20Gorseli%3C%2Ftext%3E%3C%2Fsvg%3E";
+
 function Assets() {
   const [sidebarAcik, setSidebarAcik] = useState(false);
-  const [assetler, setAssetler] = useState([]); // Tüm veriler
+  const [assetler, setAssetler] = useState([]); 
+  const [loading, setLoading] = useState(true);
 
-  // --- SAYFALAMA AYARLARI ---
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedType, setSelectedType] = useState('All'); 
+  const [selectedPrice, setSelectedPrice] = useState('all');
+
+  const [availableTypes, setAvailableTypes] = useState([]);
+
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 12; // Sayfa başı 12 asset
+  const itemsPerPage = 12; 
 
-  // 1. Assetleri Çek
   useEffect(() => {
-    fetch('http://localhost:3001/assets')
+    fetch('http://localhost:3001/asset-types')
       .then(res => res.json())
-      .then(data => {
-        setAssetler(data);
-      })
-      .catch(err => console.log("Hata:", err));
+      .then(data => setAvailableTypes(data))
+      .catch(err => console.error(err));
   }, []);
 
-  // --- MATEMATİKSEL HESAPLAMALAR ---
+  const fetchAssets = (isReset = false) => {
+    setLoading(true);
+    
+    const typeQuery = isReset ? 'All' : selectedType;
+    const priceQuery = isReset ? 'all' : selectedPrice;
+    const searchQuery = isReset ? '' : searchTerm;
+
+    const params = new URLSearchParams();
+    if (searchQuery) params.append('search', searchQuery);
+    if (typeQuery !== 'All') params.append('type', typeQuery);
+    if (priceQuery !== 'all') params.append('priceType', priceQuery);
+
+    fetch(`http://localhost:3001/assets?${params.toString()}`)
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) setAssetler(data);
+        else setAssetler([]);
+        setCurrentPage(1);
+        setLoading(false);
+      })
+      .catch(err => {
+        setAssetler([]);
+        setLoading(false);
+      });
+  };
+
+  useEffect(() => {
+    fetchAssets(true); 
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleApplyFilter = () => fetchAssets(false);
+  const handleClearFilter = () => {
+      setSelectedType('All');
+      setSelectedPrice('all');
+      setSearchTerm('');
+      fetchAssets(true);
+  };
+  const handleSearchSubmit = (e) => { e.preventDefault(); fetchAssets(false); };
+
+  const getImageSrc = (imageName) => {
+    if (!imageName || imageName === "null" || imageName === "") return FALLBACK_IMAGE;
+    if (imageName.startsWith("http")) return FALLBACK_IMAGE;
+    return `http://localhost:3001/uploads/${imageName}`;
+  };
+
+  const safeList = Array.isArray(assetler) ? assetler : [];
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  // Ekrana basılacak olan dilim (Sadece 12 tanesi)
-  const currentAssets = assetler.slice(indexOfFirstItem, indexOfLastItem);
-
-  // Toplam sayfa sayısı
-  const totalPages = Math.ceil(assetler.length / itemsPerPage);
-
-  // Sayfa değiştirme fonksiyonu
+  const currentAssets = safeList.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(safeList.length / itemsPerPage);
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
-
 
   return (
     <div className={`assets-page ${sidebarAcik ? 'sidebar-open' : ''}`}>
-        
         <Navbar />
-
-        {/* SIDEBAR */}
         <aside id="filter-sidebar" className={`sidebar ${sidebarAcik ? 'open' : ''}`}>
-            <button className="sidebar-toggle-btn close-btn" onClick={() => setSidebarAcik(false)}>
-                <i className="fas fa-times"></i> Kapat
-            </button>
+            <button className="sidebar-toggle-btn close-btn" onClick={() => setSidebarAcik(false)}><i className="fas fa-times"></i> Kapat</button>
             <h3>Filtreler</h3>
             <div className="filter-group">
-                <h4>Türler</h4>
-                <label><input type="checkbox" /> 2D</label>
-                <label><input type="checkbox" /> 3D</label>
+                <h4>Ara</h4>
+                <form onSubmit={handleSearchSubmit} style={{display:'flex', gap:'5px'}}>
+                    <input type="text" className="search-box" placeholder="Asset adı..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} style={{width:'100%'}} />
+                </form>
             </div>
-            <button className="btn btn-secondary apply-btn">Filtrele</button>
+            <div className="filter-group">
+                <h4>Türler</h4>
+                <label><input type="radio" name="type" value="All" checked={selectedType === 'All'} onChange={(e) => setSelectedType(e.target.value)} /> Tümü</label>
+                {availableTypes.map(t => (
+                    <label key={t.assetTypeID}>
+                        {/* BURASI DÜZELTİLDİ: t.type */}
+                        <input type="radio" name="type" value={t.assetTypeID} checked={parseInt(selectedType) === t.assetTypeID} onChange={(e) => setSelectedType(e.target.value)} /> {t.type}
+                    </label>
+                ))}
+            </div>
+            {/* Diğer kısımlar aynı */}
+            <div className="filter-group">
+                <h4>Fiyat</h4>
+                <label><input type="radio" name="price" value="all" checked={selectedPrice === 'all'} onChange={(e) => setSelectedPrice(e.target.value)} /> Tümü</label>
+                <label><input type="radio" name="price" value="free" checked={selectedPrice === 'free'} onChange={(e) => setSelectedPrice(e.target.value)} /> Ücretsiz</label>
+                <label><input type="radio" name="price" value="paid" checked={selectedPrice === 'paid'} onChange={(e) => setSelectedPrice(e.target.value)} /> Ücretli</label>
+            </div>
+            <div style={{display:'flex', flexDirection:'column', gap:'10px', marginTop:'20px'}}>
+                <button className="btn btn-primary" onClick={handleApplyFilter} style={{width:'100%', justifyContent:'center'}}><i className="fas fa-check"></i> Filtreleri Uygula</button>
+                <button className="btn btn-secondary" onClick={handleClearFilter} style={{width:'100%', justifyContent:'center', backgroundColor:'transparent', border:'1px solid #666'}}><i className="fas fa-trash"></i> Temizle</button>
+            </div>
         </aside>
-
-        <button id="open-sidebar-btn" className="sidebar-toggle-btn open-btn" onClick={() => setSidebarAcik(true)}>
-             <i className="fas fa-filter"></i> Filtreler
-        </button>
-
-        {/* ANA İÇERİK */}
+        <button id="open-sidebar-btn" className="sidebar-toggle-btn open-btn" onClick={() => setSidebarAcik(true)}><i className="fas fa-filter"></i> Filtreler</button>
         <main className="content container">
             <section className="game-list">
                 <h2>Tüm Assetler</h2>
-                <div className="games-grid">
-                    
-                    {/* DİKKAT: Artık 'assetler' değil 'currentAssets' dönüyoruz */}
-                    {currentAssets.map((asset) => (
-                        <Link to={`/asset/${asset.assetID}`} key={asset.assetID} style={{textDecoration:'none', color:'inherit'}}>
-                            <GameCard oyun={{
-                                baslik: asset.assetName,
-                                tur: asset.typeName || "Asset", 
-                                fiyatEtiketi: asset.assetPrice === 0 ? "Ücretsiz" : `$${asset.assetPrice}`,
-                                resim: "https://via.placeholder.com/300x180?text=Asset+Gorseli"
-                            }} />
-                        </Link>
-                    ))}
-
-                </div>
-
-                {/* --- SAYFALAMA BUTONLARI --- */}
-                {totalPages > 1 && (
-                    <div className="pagination-container">
-                        {Array.from({ length: totalPages }, (_, i) => (
-                            <button 
-                                key={i + 1} 
-                                onClick={() => paginate(i + 1)}
-                                className={`page-btn ${currentPage === i + 1 ? 'active' : ''}`}
-                            >
-                                {i + 1}
-                            </button>
-                        ))}
-                    </div>
+                {loading ? <p style={{color:'white', textAlign:'center'}}>Yükleniyor...</p> : (
+                    <>
+                        {safeList.length === 0 ? (
+                            <p style={{color:'#aaa', textAlign:'center'}}>Uygun asset bulunamadı.</p>
+                        ) : (
+                            <div className="games-grid">
+                                {currentAssets.map((asset) => (
+                                    <Link to={`/asset/${asset.assetID}`} key={asset.assetID} style={{textDecoration:'none', color:'inherit'}}>
+                                        <GameCard oyun={{
+                                            baslik: asset.assetName,
+                                            tur: asset.typeNames || "Asset", 
+                                            fiyatEtiketi: (!asset.assetPrice || asset.assetPrice === 0) ? "Ücretsiz" : `$${asset.assetPrice}`,
+                                            resim: getImageSrc(asset.assetImage || asset.coverImage)
+                                        }} />
+                                    </Link>
+                                ))}
+                            </div>
+                        )}
+                    </>
                 )}
-
             </section>
         </main>
-
-        <footer className="footer">
-            <p>&copy; 2025 Sheriff Games. Tüm Hakları Saklıdır.</p>
-        </footer>
+        <footer className="footer"><p>&copy; 2025 Sheriff Games. Tüm Hakları Saklıdır.</p></footer>
     </div>
   );
 }
