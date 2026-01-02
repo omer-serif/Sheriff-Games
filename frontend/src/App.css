@@ -547,7 +547,7 @@ body.sidebar-open .content {
 
 
 /* =========================================== */
-/* YENİ DASHBOARD (YAYINCI PANELİ) STİLLERİ    */
+/* DASHBOARD (YAYINCI PANELİ) STİLLERİ         */
 /* =========================================== */
 .dashboard-wrapper {
     display: flex;
@@ -584,12 +584,17 @@ body.sidebar-open .content {
     margin-bottom: 20px;
 }
 
-.profile-avatar {
-    width: 80px;
-    height: 80px;
+/* Sidebar Profil Avatarı */
+.avatar-circle {
+    width: 80px; height: 80px;
+    background-color: var(--card-bg);
+    border: 2px solid var(--accent-color);
+    color: var(--text-color);
+    font-size: 32px; font-weight: bold;
     border-radius: 50%;
-    margin-bottom: 10px;
-    border: 3px solid var(--accent-color);
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 15px auto;
+    box-shadow: 0 0 15px rgba(233, 69, 96, 0.3);
 }
 
 .profile-info h4 {
@@ -602,35 +607,53 @@ body.sidebar-open .content {
     flex-direction: column;
 }
 
-.nav-item {
+/* Navigasyon Butonları */
+.dashboard-nav button {
+    width: 100%;
+    background: transparent;
+    border: none;
+    color: #a0a0b0;
+    text-align: left;
+    padding: 15px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border-left: 3px solid transparent;
+    border-radius: 0 8px 8px 0;
+    margin-bottom: 5px;
     display: flex;
     align-items: center;
-    padding: 12px 10px;
-    margin-bottom: 8px;
-    color: var(--text-color);
-    border-radius: 4px;
-    transition: background-color 0.2s, color 0.2s;
-    font-weight: bold;
 }
 
-.nav-item i {
+.dashboard-nav button i {
     margin-right: 10px;
     font-size: 16px;
     color: var(--secondary-accent);
 }
 
-.nav-item:hover {
-    background-color: rgba(108, 99, 255, 0.1);
+.dashboard-nav button:hover {
+    background-color: rgba(255, 255, 255, 0.05);
     color: white;
 }
 
-.nav-item.active {
-    background-color: var(--secondary-accent);
-    color: white;
+.dashboard-nav button.active {
+    background-color: rgba(233, 69, 96, 0.1);
+    color: var(--accent-color);
+    border-left: 3px solid var(--accent-color);
+}
+.dashboard-nav button.active i {
+    color: var(--accent-color);
 }
 
-.nav-item.active i {
-    color: white;
+.nav-item.action {
+    display: flex;
+    align-items: center;
+    padding: 12px 10px;
+    color: var(--text-color);
+    transition: background-color 0.2s;
+}
+.nav-item.action:hover {
+    background-color: rgba(233, 69, 96, 0.1);
 }
 
 /* Ana İçerik Alanı */
@@ -686,7 +709,7 @@ body.sidebar-open .content {
     margin-top: 5px;
 }
 
-/* Grafik ve Hızlı Erişim Panelleri */
+/* Grafik ve Diğer Paneller */
 .chart-panel, .notifications-panel, .quick-actions {
     background-color: var(--card-bg);
     padding: 20px;
@@ -694,111 +717,287 @@ body.sidebar-open .content {
     margin-bottom: 30px;
 }
 
-.chart-placeholder {
-    height: 300px;
-    background-color: #333;
-    border-radius: 4px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    color: #999;
+.sales-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    background-color: #16213e;
 }
+.sales-table th, .sales-table td {
+    padding: 15px;
+    text-align: left;
+    border-bottom: 1px solid #0f3460;
+    color: #e0e0e0;
+}
+.profit { color: #4caf50; font-weight: bold; }
 
-.actions-and-notifications-grid {
+/* =========================================
+   DASHBOARD KARTLARI VE BUTONLARI (DÜZELTİLDİ)
+   ========================================= */
+
+/* Dashboard Grid (Oyun Kartları) */
+.dashboard-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 30px;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 25px;
+    margin-top: 20px;
 }
 
-.quick-actions {
+.dash-item-card {
+    background-color: var(--card-bg);
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    transition: transform 0.3s, box-shadow 0.3s;
     display: flex;
     flex-direction: column;
 }
 
-.action-btn {
+.dash-item-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
+    border-color: var(--accent-color);
+}
+
+/* Kart Kapak Görseli */
+.dash-card-img-wrapper {
     width: 100%;
+    height: 140px;
+    position: relative;
+    background-color: #000;
+}
+
+.dash-card-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Kart İçeriği */
+.dash-card-body {
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+}
+
+.dash-card-body h4 {
+    color: white;
     margin-bottom: 10px;
-    padding: 12px;
-    font-size: 16px;
-    border: 1px solid var(--secondary-accent);
+    font-size: 18px;
 }
 
-.notification-list {
-    list-style: none;
-    padding: 0;
+.dash-card-body p {
+    font-size: 13px;
+    color: #aaa;
+    margin-bottom: 15px;
+    flex-grow: 1;
 }
 
-.notification-list li {
-    padding: 10px 0;
-    border-bottom: 1px dashed rgba(255, 255, 255, 0.05);
+/* --- BUTTON GRUPLARI (DÜZENLE / SİL) --- */
+.dash-btn-group {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+    width: 100%;
+}
+
+.btn-dash {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
     font-size: 14px;
-    color: #ccc;
-}
-.notification-list li:last-child {
-    border-bottom: none;
-}
-.notification-list li i {
-    margin-right: 10px;
-    color: var(--accent-color);
+    font-weight: bold;
+    color: white;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
 }
 
-.notification-list li.warning {
-    color: var(--accent-color);
-    font-weight: bold;
+/* Düzenle Butonu (Mor) */
+.btn-edit {
+    background-color: #6c63ff; 
+    box-shadow: 0 4px 6px rgba(108, 99, 255, 0.2);
 }
+.btn-edit:hover {
+    background-color: #574cd6;
+    transform: translateY(-2px);
+}
+
+/* Sil Butonu (Kırmızı) */
+.btn-delete {
+    background-color: #e94560;
+    box-shadow: 0 4px 6px rgba(233, 69, 96, 0.2);
+}
+.btn-delete:hover {
+    background-color: #c9374d;
+    transform: translateY(-2px);
+}
+
+/* MODAL İÇİN ÖZEL SİL BUTONU */
+.btn-delete-confirm {
+    background-color: #d32f2f;
+    color: white;
+    padding: 10px 25px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    margin-left: 10px;
+}
+.btn-delete-confirm:hover {
+    background-color: #b71c1c;
+}
+
+/* =========================================== */
+/* MODERN MODAL (DÜZENLEME PENCERESİ) STİLLERİ */
+/* =========================================== */
+.modal-overlay {
+    position: fixed; /* Ekrana sabitle */
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.85); /* Arka planı karart */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999; /* Her şeyin üstünde */
+    backdrop-filter: blur(5px); /* Arkaya buzlu cam efekti */
+    animation: fadeIn 0.3s ease;
+}
+
+.modal-content {
+    background-color: #1a1a2e; /* Koyu lacivert zemin */
+    padding: 30px;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 500px;
+    border: 2px solid #e94560; /* Neon çerçeve */
+    box-shadow: 0 0 30px rgba(233, 69, 96, 0.4);
+    position: relative;
+    animation: slideUp 0.3s ease;
+}
+
+.modal-content h3 {
+    color: white;
+    margin-bottom: 20px;
+    text-align: center;
+    font-size: 24px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    padding-bottom: 10px;
+}
+
+.modal-content p {
+    color: #ccc;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.modal-content label {
+    display: block;
+    margin-bottom: 5px;
+    color: #ccc;
+    font-size: 14px;
+}
+
+.modal-content input, 
+.modal-content textarea {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 20px;
+    background-color: #0f3460; /* Koyu input zemini */
+    border: 1px solid #444;
+    border-radius: 6px;
+    color: white;
+    font-size: 16px;
+}
+
+.modal-content input:focus,
+.modal-content textarea:focus {
+    border-color: var(--accent-color);
+    outline: none;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 15px;
+    margin-top: 10px;
+}
+
+.btn-save { 
+    background-color: var(--accent-color); 
+    color: white; 
+    padding: 10px 25px; 
+    border: none; border-radius: 6px; 
+    cursor: pointer; font-weight: bold; 
+}
+
+.btn-cancel { 
+    background-color: transparent; 
+    color: #aaa; 
+    padding: 10px 20px; 
+    border: 1px solid #555; border-radius: 6px; 
+    cursor: pointer; 
+}
+.btn-cancel:hover { border-color: white; color: white; }
+
+/* Animasyonlar */
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
 /* =========================================
-   SAYFALAMA (PAGINATION) TASARIMI - YENİ
+   SAYFALAMA (PAGINATION) STİLLERİ
    ========================================= */
 
 .pagination-container {
   display: flex;
-  justify-content: center; /* Sayfanın tam ortasına hizalar */
+  justify-content: center;
   align-items: center;
-  margin-top: 50px;       /* Üstteki oyunlardan uzaklık */
-  margin-bottom: 50px;    /* Alttaki footer'dan uzaklık */
-  gap: 12px;              /* Butonlar arasındaki boşluk */
+  margin-top: 50px;
+  margin-bottom: 50px;
+  gap: 12px;
 }
 
 .page-btn {
-  background-color: #16213e; /* Kartların arka planına yakın koyu lacivert */
-  color: #a0a0b0;            /* Sönük gri-beyaz yazı */
-  border: 2px solid #0f3460; /* Koyu çerçeve */
-  min-width: 45px;           /* Kareye yakın ama geniş */
+  background-color: #16213e;
+  color: #a0a0b0;
+  border: 2px solid #0f3460;
+  min-width: 45px;
   height: 45px;
-  border-radius: 8px;        /* Hafif yuvarlatılmış köşeler */
+  border-radius: 8px;
   font-size: 18px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); /* Yumuşak animasyon */
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3); /* Hafif gölge */
-  
-  /* Yazıyı ortalamak için */
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
   display: flex;
   justify-content: center;
   align-items: center;
 }
 
-/* Üzerine Gelince (Hover) */
 .page-btn:hover {
-  background-color: #e94560; /* Şerif Kırmızısı */
+  background-color: #e94560;
   border-color: #e94560;
   color: #fff;
-  transform: translateY(-5px); /* Yukarı doğru hafif zıplama efekti */
-  box-shadow: 0 8px 15px rgba(233, 69, 96, 0.4); /* Neon parlama efekti */
+  transform: translateY(-5px);
+  box-shadow: 0 8px 15px rgba(233, 69, 96, 0.4);
 }
 
-/* Seçili Sayfa (Active) */
 .page-btn.active {
-  background-color: #e94560; /* Şerif Kırmızısı */
+  background-color: #e94560;
   border-color: #e94560;
   color: #ffffff;
-  pointer-events: none; /* Tıklanmayı engelle (zaten o sayfadayız) */
-  box-shadow: 0 0 20px rgba(233, 69, 96, 0.6); /* Daha güçlü bir parlama */
-  transform: scale(1.1); /* Birazcık daha büyük dursun */
+  pointer-events: none;
+  box-shadow: 0 0 20px rgba(233, 69, 96, 0.6);
+  transform: scale(1.1);
 }
 
-/* Mobilde butonlar çok sıkışmasın */
 @media (max-width: 768px) {
   .page-btn {
     min-width: 35px;
@@ -850,7 +1049,6 @@ body.sidebar-open .content {
     margin: 0 5px;
 }
 
-
 /* =========================================== */
 /* FOOTER STİLLERİ                             */
 /* =========================================== */
@@ -888,12 +1086,10 @@ body.sidebar-open .content {
     }
 }
 
-
 /* ------------------------------------------- */
 /* 768px ve altındaki ekranlar (Tablet) */
 /* ------------------------------------------- */
 @media (max-width: 768px) {
-    /* Genel Navbar Düzenlemeleri */
     .navbar { flex-wrap: wrap; justify-content: center; }
     .nav-links { order: 3; flex-basis: 100%; margin-top: 15px; text-align: center; border-top: 1px solid rgba(255, 255, 255, 0.1); padding-top: 10px; }
     .user-actions { order: 2; margin-top: 10px; }
@@ -901,29 +1097,17 @@ body.sidebar-open .content {
     .search-box { width: 150px; }
     .games-grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
 
-    /* Oyun/Asset Detay Sayfası Tablet */
     .game-body-layout { flex-direction: column; }
     .game-purchase-sidebar { min-width: 100%; order: -1; margin-bottom: 20px; }
     .game-gallery { height: 400px; }
     .slide img { height: 400px; }
-
-    /* Oyun Ekleme Sayfası Tablet */
     .create-game-card { max-width: 700px; }
     .price-group { flex-direction: column; gap: 10px; align-items: stretch; }
     .price-group select, .price-group input { flex-basis: auto; }
-    
-    /* Dashboard Tablet */
-    .stats-grid {
-        grid-template-columns: 1fr 1fr;
-    }
-    
-    /* Sayfalama Tablet */
-    .pagination {
-        flex-wrap: wrap; 
-    }
-    .page-link {
-        padding: 8px 12px;
-    }
+    .stats-grid { grid-template-columns: 1fr 1fr; }
+    .pagination { flex-wrap: wrap; }
+    .page-link { padding: 8px 12px; }
+    .detail-image-wrapper { height: 250px; }
 }
 
 /* ------------------------------------------- */
@@ -933,12 +1117,10 @@ body.sidebar-open .content {
     .container { padding: 10px; }
     .navbar { padding: 10px; }
     .logo h1 { font-size: 24px; }
-    
     .user-actions { flex-basis: 100%; flex-direction: column; margin-top: 10px; }
     .search-box { width: 100%; margin-right: 0; margin-bottom: 10px; }
     .games-grid { grid-template-columns: 1fr; }
 
-    /* Filtre Açma Butonu Mobil */
     .sidebar-toggle-btn.open-btn {
         writing-mode: horizontal-tb;
         height: auto;
@@ -951,30 +1133,13 @@ body.sidebar-open .content {
     }
     .sidebar-toggle-btn.open-btn i { transform: rotate(0deg); }
     
-    /* Login/Create Mobil Kart */
     .login-card, .create-game-card { padding: 25px 15px; margin: 0 10px; }
-    
-    /* Oyun/Asset Detay Mobil */
     .game-gallery { height: 250px; }
     .slide img { height: 250px; }
     .comment-submit-btn { align-self: stretch; }
     
-    /* Dashboard Mobil */
-    .stats-grid {
-        grid-template-columns: 1fr;
-    }
-    
-    /* Sayfalama Mobil */
-    .pagination {
-        flex-wrap: wrap; 
-        font-size: 14px;
-    }
-    .page-link, .page-ellipsis {
-        padding: 6px 10px;
-    }
-    .page-ellipsis {
-        display: none;
-    }
-
-    
+    .stats-grid { grid-template-columns: 1fr; }
+    .pagination { flex-wrap: wrap; font-size: 14px; }
+    .page-link, .page-ellipsis { padding: 6px 10px; }
+    .page-ellipsis { display: none; }
 }

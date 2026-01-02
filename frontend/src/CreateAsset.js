@@ -1,149 +1,164 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react'; // useRef EKLENDİ
+import { useNavigate } from 'react-router-dom';
+import Navbar from './navbar';
 import './App.css'; 
 
 function CreateAsset() {
-  // Fiyat tipini kontrol etmek için State
+  const navigate = useNavigate();
+
+  // REF TANIMLAMALARI
+  const assetCoverRef = useRef(null);
+  const assetFileRef = useRef(null);
+
+  // --- SAYFA GÜVENLİĞİ ---
+  useEffect(() => {
+    const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+    if (!currentUser) {
+        alert("Bu sayfaya erişmek için giriş yapmalısınız!");
+        navigate('/login');
+    }
+  }, [navigate]);
+
+  // --- STATE TANIMLARI ---
+  const [assetName, setAssetName] = useState('');
+  const [shortDesc, setShortDesc] = useState('');
+  const [description, setDescription] = useState('');
+  const [assetType, setAssetType] = useState('');
   const [priceType, setPriceType] = useState('free');
+  const [price, setPrice] = useState('');
+  
+  const [coverImage, setCoverImage] = useState(null);
+  const [assetFile, setAssetFile] = useState(null);
+
+  const handlePublish = async (e) => {
+    e.preventDefault();
+    const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+    if (!currentUser) return;
+
+    const formData = new FormData();
+    formData.append('assetName', assetName);
+    formData.append('assetDescription', description);
+    formData.append('assetPrice', priceType === 'free' ? 0 : price);
+    formData.append('assetType', assetType);
+    formData.append('userID', currentUser.userID);
+
+    if (coverImage) formData.append('coverImage', coverImage);
+    if (assetFile) formData.append('assetFile', assetFile);
+
+    try {
+        console.log("Asset sunucuya gönderiliyor...");
+        const response = await fetch('http://localhost:3001/api/add-asset', {
+            method: 'POST',
+            body: formData
+        });
+        const result = await response.json();
+
+        if (result.status === "Success") {
+            alert("Harika! Asset başarıyla mağazaya yüklendi 🎨");
+            navigate('/assets'); // Veya uygun bir yönlendirme
+        } else {
+            alert("Hata: " + result.message);
+        }
+    } catch (error) {
+        console.error("Yükleme hatası:", error);
+        alert("Sunucuya bağlanılamadı.");
+    }
+  };
 
   return (
     <div className="create-asset-body">
-        {/* NAVBAR */}
-        {/* GÜNCELLENMİŞ NAVBAR */}
-      <header className="navbar">
-              <div className="logo">
-                <h1>SHERIFF GAMES</h1>
-              </div>
-              <nav className="nav-links">
-                {/* Ana Sayfa */}
-                <Link to="/">Oyunlar</Link> 
-                
-                {/* Assetler Sayfası */}
-                <Link to="/assets">Assetler</Link>
-                
-                {/* Oyun Ekleme Sayfası */}
-                <Link to="/create-game">Oyun Yükle</Link>
-                
-                {/* Asset Ekleme Sayfası (Yeni ekledik) */}
-                <Link to="/create-asset">Asset Yükle</Link>
-              </nav>
-              
-              <div className="user-actions">
-                <input type="text" placeholder="Oyun ara..." className="search-box" />
-                
-                {/* Giriş Yap yerine Panelim butonunu gösteriyoruz */}
-                <Link to="/dashboard" className="btn btn-primary">Panelim</Link>
-                {/* Eğer çıkış yapmış gibi görünmek istersen aşağıdakini kullan: */}
-                {/* <Link to="/login" className="btn btn-primary">Giriş Yap</Link> */}
-              </div>
-            </header>
-
-        {/* ANA İÇERİK */}
+      <Navbar />
         <main className="create-asset-container container">
             <div className="create-game-card">
                 <h2>Yeni Asset'i Yükle</h2>
                 <p className="subtitle">Oyunlarınızda kullanılabilecek görsel, ses veya kod varlığını paylaşın.</p>
 
-                <form>
-                    
-                    {/* BÖLÜM 1 */}
+                <form onSubmit={handlePublish}>
                     <section className="form-section">
                         <h3>1. Asset Tanıtımı</h3>
                         <div className="form-group">
-                            <label htmlFor="asset-title">Asset Adı <span className="required">*</span></label>
-                            <input type="text" id="asset-title" name="asset-title" required placeholder="Asset'in kısa ve açıklayıcı adı" />
+                            <label>Asset Adı *</label>
+                            <input type="text" required value={assetName} onChange={(e) => setAssetName(e.target.value)} />
                         </div>
-                        
                         <div className="form-group">
-                            <label htmlFor="short-description">Kısa Açıklama (Özet)</label>
-                            <input type="text" id="short-description" name="short-description" maxLength="150" placeholder="Asset'in kullanım alanı özeti (max 150 karakter)" />
+                            <label>Kısa Açıklama</label>
+                            <input type="text" maxLength="150" value={shortDesc} onChange={(e) => setShortDesc(e.target.value)} />
                         </div>
-
                         <div className="form-group">
-                            <label htmlFor="description">Detaylı Açıklama</label>
-                            <textarea id="description" name="description" rows="8" placeholder="Asset'in içeriği, lisansı ve kullanım talimatları"></textarea>
+                            <label>Detaylı Açıklama</label>
+                            <textarea rows="8" value={description} onChange={(e) => setDescription(e.target.value)}></textarea>
                         </div>
                     </section>
 
-                    {/* BÖLÜM 2 */}
                     <section className="form-section">
                         <h3>2. Görseller ve Asset Dosyası</h3>
                         
+                        {/* ASSET ÖNİZLEME */}
                         <div className="form-group">
-                            <label htmlFor="cover-image">Asset Önizleme Görseli <span className="required">*</span></label>
-                            <div className="file-upload-box">
-                                <input type="file" id="cover-image" name="cover-image" accept="image/*" required />
-                                <span className="file-label"><i className="fas fa-upload"></i> Önizleme görselini seç (Asset'i gösteren bir resim)</span>
+                            <label>Asset Önizleme *</label>
+                            <div className="file-upload-box" onClick={() => assetCoverRef.current.click()}>
+                                <input 
+                                    type="file" 
+                                    accept="image/*" 
+                                    required 
+                                    ref={assetCoverRef} 
+                                    onChange={(e) => setCoverImage(e.target.files[0])} 
+                                />
+                                <span className="file-label">
+                                    <i className="fa fa-image"></i>
+                                    {coverImage ? coverImage.name : "Önizleme görselini seçmek için tıkla"}
+                                </span>
                             </div>
                         </div>
-                        
+
+                        {/* ASSET DOSYASI */}
                         <div className="form-group">
-                            <label htmlFor="asset-file">Asset Dosyasını Yükle <span className="required">*</span></label>
-                            <div className="file-upload-box">
-                                <input type="file" id="asset-file" name="asset-file" required />
-                                <span className="file-label"><i className="fas fa-file-archive"></i> ZIP, PNG, FBX veya kod dosyalarını yükle</span>
+                            <label>Asset Dosyası *</label>
+                            <div className="file-upload-box" onClick={() => assetFileRef.current.click()}>
+                                <input 
+                                    type="file" 
+                                    required 
+                                    ref={assetFileRef} 
+                                    onChange={(e) => setAssetFile(e.target.files[0])} 
+                                />
+                                <span className="file-label">
+                                    <i className="fa fa-folder-open"></i>
+                                    {assetFile ? assetFile.name : "ZIP/PNG/FBX dosyasını seçmek için tıkla"}
+                                </span>
                             </div>
                         </div>
                     </section>
 
-                    {/* BÖLÜM 3 */}
                     <section className="form-section last-section">
                         <h3>3. Sınıflandırma ve Fiyatlandırma</h3>
-                        
                         <div className="form-group">
-                            <label htmlFor="asset-type">Asset Türü <span className="required">*</span></label>
-                            <select id="asset-type" name="asset-type" required defaultValue="">
-                                <option value="" disabled>Bir asset türü seçin</option>
-                                <option value="2d_sprite">2D Sprite/Görsel</option>
-                                <option value="3d_model">3D Model</option>
-                                <option value="audio">Ses/Müzik</option>
-                                <option value="code">Kod Parçacığı (Script)</option>
-                                <option value="texture">Doku/Materyal</option>
+                            <label>Asset Türü *</label>
+                            <select required value={assetType} onChange={(e) => setAssetType(e.target.value)}>
+                                <option value="" disabled>Seçiniz</option>
+                                <option value="1">2D Sprite</option>
+                                <option value="2">3D Model</option>
+                                <option value="3">Ses Efekti</option>
+                                <option value="4">UI</option>
+                                <option value="5">Müzik</option>
                             </select>
                         </div>
-
                         <div className="form-group price-group">
-                            <label htmlFor="price-type">Fiyatlandırma</label>
-                            
-                            {/* React State ile kontrol */}
-                            <select 
-                                id="price-type" 
-                                name="price-type" 
-                                onChange={(e) => setPriceType(e.target.value)}
-                            >
+                            <label>Fiyatlandırma</label>
+                            <select onChange={(e) => setPriceType(e.target.value)} value={priceType}>
                                 <option value="free">Ücretsiz</option>
-                                <option value="paid">Ücretli (Fiyat Belirt)</option>
+                                <option value="paid">Ücretli</option>
                             </select>
-
-                            {/* Sadece 'paid' seçiliyse bu inputu göster */}
                             {priceType === 'paid' && (
-                                <input 
-                                    type="number" 
-                                    id="price-amount" 
-                                    name="price-amount" 
-                                    placeholder="0.00" 
-                                    step="0.01" 
-                                    min="0" 
-                                    required 
-                                />
+                                <input type="number" step="0.01" min="0" required value={price} onChange={(e) => setPrice(e.target.value)} />
                             )}
                         </div>
                     </section>
                     
-                    <button type="submit" className="btn btn-secondary publish-btn"><i className="fas fa-box-open"></i> Asset'i Yayımla</button>
+                    <button type="submit" className="btn btn-secondary publish-btn">ASSET'İ YAYIMLA</button>
                 </form>
             </div>
         </main>
-
-        {/* FOOTER */}
-        <footer className="footer">
-            <p>&copy; 2025 Sheriff Games. Tüm Hakları Saklıdır.</p>
-            <div className="footer-links">
-                <a href="#">Hakkımızda</a> |
-                <a href="#">Geliştiriciler</a> |
-                <a href="#">Destek</a>
-            </div>
-        </footer>
+        <footer className="footer"><p>&copy; 2025 Sheriff Games.</p></footer>
     </div>
   );
 }

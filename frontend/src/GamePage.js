@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom'; // useParams URL'deki ID'yi okur
-import Navbar from './navbar'; // Senin Akıllı Navbar'ın
+import { useParams, Link } from 'react-router-dom';
+import Navbar from './navbar';
 import './App.css'; 
 
 function GamePage() {
-  const { id } = useParams(); // URL'den ID'yi al (Örn: /game/5 ise id = 5)
-  const [game, setGame] = useState(null); // Oyun verisini tutacak
-  const [loading, setLoading] = useState(true); // Yükleniyor durumu
+  const { id } = useParams();
+  const [game, setGame] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  // SLIDER AYARLARI
+  // SLIDER AYARLARI (İleride çoklu resim için kullanılabilir)
   const [currentSlide, setCurrentSlide] = useState(0);
 
   // 1. Veritabanından OYUNU ÇEK
@@ -22,12 +22,14 @@ function GamePage() {
       .catch(err => console.error("Hata:", err));
   }, [id]);
 
+  // Resim Listesi Hazırla
+  // Şimdilik sadece tek bir resmimiz var (game.gameImage)
+  const mainImage = game && game.gameImage 
+    ? `http://localhost:3001/uploads/${game.gameImage}`
+    : "https://via.placeholder.com/800x450?text=Resim+Yok";
 
-  // Slider İçin Resim Listesi Hazırla
-  // (Eğer veritabanında resim varsa onu kullan, yoksa placeholder kullan)
-  const images = game && game.gameImage 
-    ? [`http://localhost:3001/uploads/${game.gameImage}`, "https://via.placeholder.com/800x450?text=Gorsel+2", "https://via.placeholder.com/800x450?text=Gorsel+3"]
-    : ["https://via.placeholder.com/800x450?text=Resim+Yok", "https://via.placeholder.com/800x450?text=Gorsel+2"];
+  // Slider dizisi (Şu an tek elemanlı)
+  const images = [mainImage];
 
   const moveSlider = (direction) => {
     let newSlide = currentSlide + direction;
@@ -36,31 +38,22 @@ function GamePage() {
     setCurrentSlide(newSlide);
   };
 
-  // Eğer veri henüz gelmediyse "Yükleniyor" göster
-  if (loading) {
-      return <div style={{color:'white', textAlign:'center', marginTop:'50px'}}>Oyun bilgileri yükleniyor...</div>;
-  }
-  
-  // Eğer oyun bulunamadıysa (ID yanlışsa)
-  if (!game) {
-      return <div style={{color:'white', textAlign:'center', marginTop:'50px'}}>Oyun bulunamadı.</div>;
-  }
+  if (loading) return <div style={{color:'white', textAlign:'center', marginTop:'50px'}}>Oyun bilgileri yükleniyor...</div>;
+  if (!game) return <div style={{color:'white', textAlign:'center', marginTop:'50px'}}>Oyun bulunamadı.</div>;
 
   return (
     <div className="game-detail-body">
         
-        {/* AKILLI NAVBAR (Giriş yaptıysan ismin görünür) */}
         <Navbar />
 
         <main className="game-detail-container container">
             
             <header className="game-header">
-                {/* VERİTABANINDAN GELEN İSİM */}
                 <h1>{game.gameName}</h1>
                 <p className="tagline">{game.gameDescription ? game.gameDescription.substring(0, 100) + "..." : "Harika bir oyun."}</p>
             </header>
 
-            {/* REACT SLIDER */}
+            {/* GÖRSEL ALANI (SLIDER) */}
             <section className="game-gallery">
                 <div className="slider-wrapper" style={{ overflow: 'hidden', position: 'relative' }}>
                     <div 
@@ -73,13 +66,25 @@ function GamePage() {
                     >
                         {images.map((imgSrc, index) => (
                             <div className="slide" key={index} style={{ minWidth: '100%' }}>
-                                <img src={imgSrc} alt={`Oyun Görseli ${index + 1}`} style={{ width: '100%', height:'400px', objectFit:'cover', display: 'block' }} />
+                                {/* CSS ile Güzelleştirilmiş Resim Alanı */}
+                                <div className="detail-image-wrapper">
+                                    <img 
+                                        src={imgSrc} 
+                                        alt={`Oyun Görseli ${index + 1}`} 
+                                        className="detail-image"
+                                    />
+                                </div>
                             </div>
                         ))}
                     </div>
                     
-                    <button className="slider-btn prev-btn" onClick={() => moveSlider(-1)}><i className="fas fa-chevron-left"></i></button>
-                    <button className="slider-btn next-btn" onClick={() => moveSlider(1)}><i className="fas fa-chevron-right"></i></button>
+                    {/* Eğer birden fazla resim olsaydı butonlar işe yarayacaktı */}
+                    {images.length > 1 && (
+                        <>
+                            <button className="slider-btn prev-btn" onClick={() => moveSlider(-1)}><i className="fas fa-chevron-left"></i></button>
+                            <button className="slider-btn next-btn" onClick={() => moveSlider(1)}><i className="fas fa-chevron-right"></i></button>
+                        </>
+                    )}
                 </div>
             </section>
 
@@ -88,14 +93,12 @@ function GamePage() {
                 <div className="game-description-column">
                     <div className="game-info-box">
                         <h3>Oyun Hakkında</h3>
-                        {/* VERİTABANINDAN GELEN AÇIKLAMA */}
                         <p>{game.gameDescription || "Bu oyun için detaylı açıklama girilmemiş."}</p>
                     </div>
 
                     <div className="game-info-box categories">
                         <h3>Kategoriler</h3>
-                        {/* Şimdilik sabit, ileride veritabanından çekeriz */}
-                        <span className="category-tag">Genel</span>
+                        <span className="category-tag">{game.category || "Genel"}</span>
                         <span className="category-tag">Bağımsız Yapım</span>
                     </div>
                 </div>
@@ -104,7 +107,6 @@ function GamePage() {
                     <div className="purchase-box">
                         <span className="price-label">Fiyat:</span>
                         
-                        {/* VERİTABANINDAN GELEN FİYAT */}
                         <span className="price-amount">
                             {game.gamePrice === 0 ? "ÜCRETSİZ" : `$${game.gamePrice}`}
                         </span>
@@ -119,7 +121,6 @@ function GamePage() {
                 </aside>
             </section>
 
-            {/* YORUM KISMI (Sabit kalabilir şimdilik) */}
             <section className="comments-section">
                 <h2>Kullanıcı Yorumları</h2>
                 <div className="comment-form-box">

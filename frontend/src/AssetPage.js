@@ -22,6 +22,12 @@ function AssetPage() {
   if (loading) return <div style={{color:'white', textAlign:'center', marginTop:'50px'}}>Yükleniyor...</div>;
   if (!asset) return <div style={{color:'white', textAlign:'center', marginTop:'50px'}}>Asset bulunamadı.</div>;
 
+  // --- RESİM YOLU AYARI ---
+  // Eğer veritabanında resim varsa backend'den çek, yoksa placeholder kullan
+  const imageUrl = asset.assetImage 
+    ? `http://localhost:3001/uploads/${asset.assetImage}` 
+    : "https://via.placeholder.com/800x400?text=Resim+Yok";
+
   return (
     <div className="game-detail-body">
         <Navbar />
@@ -34,12 +40,12 @@ function AssetPage() {
             </header>
 
             <section className="game-gallery">
-                 {/* Tek bir kapak görseli koyuyoruz şimdilik */}
-                 <div className="slider-wrapper" style={{display:'flex', justifyContent:'center'}}>
+                 {/* CSS ile Güzelleştirilmiş Resim Alanı */}
+                 <div className="detail-image-wrapper">
                     <img 
-                        src="https://via.placeholder.com/800x400?text=Asset+Detay+Gorseli" 
+                        src={imageUrl} 
                         alt={asset.assetName} 
-                        style={{width:'100%', maxWidth:'800px', borderRadius:'10px'}}
+                        className="detail-image"
                     />
                  </div>
             </section>
@@ -64,7 +70,7 @@ function AssetPage() {
                             {asset.assetPrice === 0 ? "ÜCRETSİZ" : `$${asset.assetPrice}`}
                         </span>
                         
-                        <Link to="#" className="btn btn-primary buy-btn"><i className="fas fa-shopping-cart"></i> SATIN AL</Link>
+                        <Link to="#" className="btn btn-primary buy-btn"><i className="fas fa-shopping-cart"></i> SATIN AL / İNDİR</Link>
                         
                         <div className="details-summary">
                             <p><strong>Yayıncı:</strong> Topluluk Geliştiricisi</p>
