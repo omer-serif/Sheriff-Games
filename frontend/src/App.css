@@ -354,7 +354,6 @@ body.sidebar-open .content {
 /* YENİ OYUN/ASSET EKLEME SAYFASI STİLLERİ     */
 /* =========================================== */
 
-/* Asset konteyneri, create-game konteyneri ile aynı stili kullanacak */
 .create-game-container, .create-asset-container {
     padding: 40px 20px;
 }
@@ -481,61 +480,215 @@ body.sidebar-open .content {
 /* OYUN DETAY VE ASSET DETAY SAYFALARI STİLLERİ*/
 /* =========================================== */
 
+/* Sayfa Gövdesi */
+.game-detail-body {
+    background-color: #1a1a2e;
+    min-height: 100vh;
+}
+
+/* 1. BAŞLIK ALANI */
 .game-header {
-    margin-bottom: 30px;
-    padding-bottom: 10px;
-    border-bottom: 2px solid var(--card-bg);
+    text-align: center;
+    margin-bottom: 40px;
+    padding: 20px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .game-header h1 {
-    font-size: 42px;
-    color: white;
-    margin-bottom: 5px;
+    font-size: 3rem;
+    color: #fff;
+    margin: 0;
+    text-shadow: 0 4px 10px rgba(233, 69, 96, 0.4);
 }
 
+.game-header .tagline {
+    color: var(--secondary-accent);
+    font-size: 1.1rem;
+    margin-top: 10px;
+}
+
+/* 2. GALERİ / RESİM ALANI */
 .game-gallery {
     position: relative;
     width: 100%;
+    height: 500px;
+    background-color: #000;
+    border-radius: 12px;
     overflow: hidden;
     margin-bottom: 40px;
-    border-radius: 8px;
-    background-color: #000;
-    height: 500px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    border: 1px solid #333;
 }
 
 .slider-track { display: flex; transition: transform 0.4s ease-in-out; height: 100%; }
 .slide { min-width: 100%; box-sizing: border-box; height: 100%; }
-.slide img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
-.game-body-layout { display: flex; gap: 30px; }
+.detail-image-wrapper {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.detail-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* 3. ANA DÜZEN (SOL VE SAĞ KOLON) */
+.game-body-layout { 
+    display: grid; 
+    grid-template-columns: 2fr 1fr; 
+    gap: 40px;
+    align-items: start;
+}
+
 .game-description-column { flex: 3; }
+
+/* 4. MODERN AÇIKLAMA KUTUSU (YENİLENMİŞ) */
+.modern-description-box {
+    background-color: #22223b;
+    border-radius: 12px;
+    padding: 30px;
+    margin-bottom: 30px;
+    border-left: 5px solid var(--accent-color); /* Vurgu Çizgisi */
+    box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+}
+
+.modern-description-box h3 {
+    font-size: 1.5rem;
+    color: #fff;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    text-align: center; /* Başlığı Ortala */
+}
+
+.description-text {
+    font-size: 1.1rem;
+    line-height: 1.8;
+    color: #d1d1d1;
+    white-space: pre-wrap; /* Satır başlarını koru */
+    text-align: center; /* Metni Ortala */
+}
+
+/* 5. KATEGORİ ETİKETLERİ */
+.game-info-box.categories {
+    background-color: #22223b;
+    padding: 25px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.05);
+}
+
+.game-info-box.categories h3 {
+    color: var(--secondary-accent);
+    margin-bottom: 15px;
+    font-size: 1.2rem;
+}
+
+.categories-wrapper {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.category-tag {
+    background-color: rgba(108, 99, 255, 0.15); /* Mor zemin */
+    color: var(--secondary-accent);
+    border: 1px solid var(--secondary-accent);
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    display: inline-block;
+}
+
+.category-tag:hover {
+    background-color: var(--secondary-accent);
+    color: white;
+    transform: translateY(-2px);
+}
+
+.category-tag.asset-tag {
+    background-color: rgba(0, 188, 212, 0.15);
+    color: var(--asset-tag-color);
+    border-color: var(--asset-tag-color);
+}
+
+/* 6. SAĞ TARAF (SATIN ALMA KARTI) */
 .game-purchase-sidebar {
     flex: 1;
     min-width: 300px;
-    background-color: var(--card-bg);
+    position: sticky;
+    top: 100px; /* Kaydırınca sabit kal */
+}
+
+.purchase-box { 
+    background-color: #16213e;
+    padding: 30px;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+    text-align: center;
+}
+
+.price-tag-large {
+    background-color: rgba(0, 0, 0, 0.2);
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 25px;
+}
+
+.price-lbl {
+    display: block; font-size: 0.9rem; color: #aaa; text-transform: uppercase; margin-bottom: 5px;
+}
+.price-val {
+    display: block; font-size: 2.5rem; font-weight: 800; color: var(--accent-color);
+}
+
+.buy-btn { 
+    width: 100%; 
+    padding: 18px; 
+    font-size: 1.2rem; 
+    font-weight: 800; 
+    margin-bottom: 25px;
+}
+
+.details-summary {
+    background-color: rgba(255, 255, 255, 0.03);
     padding: 20px;
     border-radius: 8px;
-    align-self: flex-start;
-    border: 1px solid rgba(233, 69, 96, 0.3);
+    text-align: left;
 }
 
-.purchase-box { text-align: center; }
-.price-amount { display: block; font-size: 48px; color: var(--accent-color); font-weight: bold; margin-bottom: 20px; }
-.buy-btn, .download-btn { display: block; width: 100%; margin-bottom: 15px; padding: 15px; font-size: 18px; }
-
-/* Asset Tag'leri için Farklı Renk */
-.asset-tag {
-    display: inline-block;
-    background-color: #333;
-    color: var(--asset-tag-color, #00bcd4); /* Turkuaz tonu */
-    padding: 5px 10px;
-    border-radius: 4px;
-    font-size: 14px;
-    margin-right: 8px;
-    margin-bottom: 8px;
+.summary-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
+.summary-row:last-child { border-bottom: none; }
 
-.comments-section { margin-top: 50px; padding-top: 20px; border-top: 2px solid var(--card-bg); }
+.summary-label { color: #888; font-size: 0.9rem; }
+.summary-value { color: white; font-weight: 600; }
+.summary-value.author { color: #00bcd4; } 
+.summary-value.firm { color: var(--accent-color); }
+
+.publisher-signature {
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid rgba(255,255,255,0.1);
+    font-size: 0.85rem;
+    color: #666;
+    font-style: italic;
+}
+.publisher-signature span { color: var(--accent-color); font-weight: bold; }
+
+/* Yorum Alanı */
+.comments-section { margin-top: 60px; padding-top: 40px; border-top: 1px solid #333; }
 .comment-form-box { background-color: var(--card-bg); padding: 20px; border-radius: 8px; margin-bottom: 30px; }
 .comment-form { display: flex; flex-direction: column; }
 .comment-textarea { 
@@ -732,7 +885,7 @@ body.sidebar-open .content {
 .profit { color: #4caf50; font-weight: bold; }
 
 /* =========================================
-   DASHBOARD KARTLARI VE BUTONLARI (DÜZELTİLDİ)
+   DASHBOARD KARTLARI VE BUTONLARI
    ========================================= */
 
 /* Dashboard Grid (Oyun Kartları) */
@@ -1008,75 +1161,51 @@ body.sidebar-open .content {
 .sales-table th { background-color: #0f1219; color: var(--accent-color); }
 .profit { color: #4caf50; font-weight: bold; }
 
-/* Responsive */
-@media (max-width: 992px) {
-    .dashboard-wrapper { flex-direction: column; }
-    .dashboard-sidebar { width: 100%; position: static; margin-bottom: 30px; }
-}
-@media (max-width: 768px) {
-    .navbar { flex-wrap: wrap; justify-content: center; }
-    .nav-links { margin-top: 10px; width: 100%; text-align: center; }
-    .games-grid, .dashboard-grid { grid-template-columns: 1fr; }
-    
-    .selection-buttons { flex-direction: column; } /* Mobilde seçim butonlarını alt alta yap */
-}
-
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-@keyframes slideUp { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-
 /* =========================================
    SAYFALAMA (PAGINATION) STİLLERİ
    ========================================= */
 
 .pagination-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin-top: 50px;
-  margin-bottom: 50px;
-  gap: 12px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 50px;
+    margin-bottom: 50px;
+    gap: 12px;
 }
 
 .page-btn {
-  background-color: #16213e;
-  color: #a0a0b0;
-  border: 2px solid #0f3460;
-  min-width: 45px;
-  height: 45px;
-  border-radius: 8px;
-  font-size: 18px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-  display: flex;
-  justify-content: center;
-  align-items: center;
+    background-color: #16213e;
+    color: #a0a0b0;
+    border: 2px solid #0f3460;
+    min-width: 45px;
+    height: 45px;
+    border-radius: 8px;
+    font-size: 18px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 .page-btn:hover {
-  background-color: #e94560;
-  border-color: #e94560;
-  color: #fff;
-  transform: translateY(-5px);
-  box-shadow: 0 8px 15px rgba(233, 69, 96, 0.4);
+    background-color: #e94560;
+    border-color: #e94560;
+    color: #fff;
+    transform: translateY(-5px);
+    box-shadow: 0 8px 15px rgba(233, 69, 96, 0.4);
 }
 
 .page-btn.active {
-  background-color: #e94560;
-  border-color: #e94560;
-  color: #ffffff;
-  pointer-events: none;
-  box-shadow: 0 0 20px rgba(233, 69, 96, 0.6);
-  transform: scale(1.1);
-}
-
-@media (max-width: 768px) {
-  .page-btn {
-    min-width: 35px;
-    height: 35px;
-    font-size: 14px;
-  }
+    background-color: #e94560;
+    border-color: #e94560;
+    color: #ffffff;
+    pointer-events: none;
+    box-shadow: 0 0 20px rgba(233, 69, 96, 0.6);
+    transform: scale(1.1);
 }
 
 .page-link {
@@ -1157,6 +1286,8 @@ body.sidebar-open .content {
     .actions-and-notifications-grid {
         grid-template-columns: 1fr;
     }
+    .game-body-layout { grid-template-columns: 1fr; }
+    .game-purchase-sidebar { position: static; order: -1; margin-bottom: 30px; }
 }
 
 /* ------------------------------------------- */
@@ -1181,6 +1312,19 @@ body.sidebar-open .content {
     .pagination { flex-wrap: wrap; }
     .page-link { padding: 8px 12px; }
     .detail-image-wrapper { height: 250px; }
+    
+    /* Responsive Buton */
+    .page-btn {
+        min-width: 35px;
+        height: 35px;
+        font-size: 14px;
+    }
+    
+    .game-header h1 { font-size: 2.5rem; }
+    .game-gallery { height: 300px; }
+    .search-box { width: 100%; margin: 0; }
+    .dashboard-wrapper { flex-direction: column; }
+    .dashboard-sidebar { width: 100%; }
 }
 
 /* ------------------------------------------- */
@@ -1215,4 +1359,5 @@ body.sidebar-open .content {
     .pagination { flex-wrap: wrap; font-size: 14px; }
     .page-link, .page-ellipsis { padding: 6px 10px; }
     .page-ellipsis { display: none; }
+    .selection-buttons { flex-direction: column; } 
 }

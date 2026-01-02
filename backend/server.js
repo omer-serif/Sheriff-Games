@@ -151,38 +151,69 @@ app.get('/assets', (req, res) => {
     });
 });
 
-// DETAYLAR
 app.get('/games/:id', (req, res) => {
     const sql = `
-        SELECT G.*, GROUP_CONCAT(GT.gameType SEPARATOR ', ') as categoryNames 
-        FROM Games G
+        SELECT 
+            G.gamesID, 
+            G.gameName, 
+            G.gamePrice, 
+            G.gameDescription, 
+            G.gameImage, 
+            G.gameFile,
+            U.userName as publisherName, 
+            GROUP_CONCAT(GT.gameType SEPARATOR ', ') as categoryNames 
+        FROM games G
+        LEFT JOIN usergamedevelops UGD ON G.gamesID = UGD.game
+        LEFT JOIN user U ON UGD.user = U.userID
         LEFT JOIN gametypes_game GTG ON G.gamesID = GTG.game
         LEFT JOIN gametypes GT ON GTG.gameType = GT.gameTypeID
         WHERE G.gamesID = ?
-        GROUP BY G.gamesID, G.gameName, G.gamePrice, G.gameDescription, G.gameImage, G.gameFile
+        GROUP BY G.gamesID, G.gameName, G.gamePrice, G.gameDescription, G.gameImage, G.gameFile, U.userName
     `;
+    
     db.query(sql, [req.params.id], (err, data) => {
-        if(err) return res.status(500).json(err);
+        if(err) {
+            console.error("SQL Hatası (Game Detail):", err); // Hatayı konsola bas
+            return res.status(500).json(err);
+        }
+        // Eğer kayıt yoksa boş dönmesin, kontrol edelim
+        if (data.length === 0) return res.status(404).json({ message: "Oyun bulunamadı" });
+        
         return res.json(data[0]); 
     });
 });
 
+// --- ASSET DETAY (Workbench'teki Kanıtlanmış Sorgu) ---
 app.get('/assets/:id', (req, res) => {
-    // Burada da AT.type kullanıldı
     const sql = `
-        SELECT A.*, GROUP_CONCAT(AT.type SEPARATOR ', ') as typeNames 
-        FROM Assets A
+        SELECT 
+            A.assetID, 
+            A.assetName, 
+            A.assetPrice, 
+            A.assetDescription, 
+            A.assetImage, 
+            A.assetFile,
+            U.userName as publisherName,
+            GROUP_CONCAT(AT.type SEPARATOR ', ') as typeNames 
+        FROM assets A
+        LEFT JOIN userassetdevelops UAD ON A.assetID = UAD.asset
+        LEFT JOIN user U ON UAD.user = U.userID
         LEFT JOIN assettypes_asset ATA ON A.assetID = ATA.asset
         LEFT JOIN assettypes AT ON ATA.assetType = AT.assetTypeID
         WHERE A.assetID = ?
-        GROUP BY A.assetID, A.assetName, A.assetPrice, A.assetDescription, A.assetImage, A.assetFile
+        GROUP BY A.assetID, A.assetName, A.assetPrice, A.assetDescription, A.assetImage, A.assetFile, U.userName
     `;
+    
     db.query(sql, [req.params.id], (err, data) => {
-        if(err) return res.status(500).json(err);
+        if(err) {
+            console.error("SQL Hatası (Asset Detail):", err);
+            return res.status(500).json(err);
+        }
+        if (data.length === 0) return res.status(404).json({ message: "Asset bulunamadı" });
+
         return res.json(data[0]);
     });
 });
-
 // EKLEME İŞLEMLERİ
 app.post('/api/add-game', upload.fields([{ name: 'coverImage' }, { name: 'gameFile' }]), (req, res) => {
     const { gameName, gameDescription, gamePrice, gameTypes, userID } = req.body; 
@@ -335,6 +366,91 @@ app.delete('/api/delete-item', (req, res) => {
                 });
             });
         }
+    });
+});
+
+// ==========================================
+// YORUM SİSTEMİ (COMMENTS)
+// ==========================================
+
+// --- OYUN YORUMLARINI GETİR ---
+app.get('/api/game-comments/:gameID', (req, res) => {
+    const sql = `
+        SELECT GC.*, U.userName 
+        FROM GameComments GC 
+        JOIN User U ON GC.userID = U.userID 
+        WHERE GC.gameID = ? 
+        ORDER BY GC.commentDate DESC
+    `;
+    db.query(sql, [req.params.gameID], (err, data) => {
+        if(err) return res.status(500).json(err);
+        return res.json(data);
+    });
+});
+
+// --- OYUNA YORUM YAP ---
+app.post('/api/add-game-comment', (req, res) => {
+    const { gameID, userID, commentText } = req.body;
+    const sql = "INSERT INTO GameComments (gameID, userID, commentText) VALUES (?, ?, ?)";
+    db.query(sql, [gameID, userID, commentText], (err, result) => {
+        if(err) return res.status(500).json(err);
+        return res.json({ status: "Success", message: "Yorum eklendi" });
+    });
+});
+
+// --- ASSET YORUMLARINI GETİR ---
+app.get('/api/asset-comments/:assetID', (req, res) => {
+    const sql = `
+        SELECT AC.*, U.userName 
+        FROM AssetComments AC 
+        JOIN User U ON AC.userID = U.userID 
+        WHERE AC.assetID = ? 
+        ORDER BY AC.commentDate DESC
+    `;
+    db.query(sql, [req.params.assetID], (err, data) => {
+        if(err) return res.status(500).json(err);
+        return res.json(data);
+    });
+});
+
+// --- ASSETE YORUM YAP ---
+app.post('/api/add-asset-comment', (req, res) => {
+    const { assetID, userID, commentText } = req.body;
+    const sql = "INSERT INTO AssetComments (assetID, userID, commentText) VALUES (?, ?, ?)";
+    db.query(sql, [assetID, userID, commentText], (err, result) => {
+        if(err) return res.status(500).json(err);
+        return res.json({ status: "Success", message: "Yorum eklendi" });
+    });
+});
+
+app.post('/api/buy-game', (req, res) => {
+    const { userID, gameID, price } = req.body;
+    
+    // userbygame tablosuna ekle (user, game, price, purchaseDate)
+    const sql = "INSERT INTO userbygame (user, game, price, purchaseDate) VALUES (?, ?, ?, NOW())";
+    
+    db.query(sql, [userID, gameID, price], (err, result) => {
+        if (err) {
+            console.error("Oyun Satın Alma Hatası:", err);
+            return res.status(500).json({ status: "Error", message: err.message });
+        }
+        return res.json({ status: "Success", message: "Oyun kütüphaneye eklendi." });
+    });
+});
+
+// 2. ASSET SATIN AL / İNDİR KAYDI
+app.post('/api/buy-asset', (req, res) => {
+    const { userID, assetID, price } = req.body;
+
+    // userbyasset tablosuna ekle (user, asset, price, purchaseDate)
+    const sql = "INSERT INTO userbyasset (user, asset, price, purchaseDate) VALUES (?, ?, ?, NOW())";
+
+    db.query(sql, [userID, assetID, price], (err, result) => {
+        if (err) {
+            console.error("Asset Satın Alma Hatası:", err);
+            return res.status(500).json({ status: "Error", message: err.message });
+        }
+        return res.json({ status: "Success", message: "Asset kütüphaneye eklendi." });
     });
 });
 

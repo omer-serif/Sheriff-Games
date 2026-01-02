@@ -11,6 +11,7 @@ function Assets() {
   const [assetler, setAssetler] = useState([]); 
   const [loading, setLoading] = useState(true);
 
+  // Filtreler
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedType, setSelectedType] = useState('All'); 
   const [selectedPrice, setSelectedPrice] = useState('all');
@@ -20,6 +21,7 @@ function Assets() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 12; 
 
+  // Asset Tiplerini Çek (Sidebar için)
   useEffect(() => {
     fetch('http://localhost:3001/asset-types')
       .then(res => res.json())
@@ -55,7 +57,7 @@ function Assets() {
 
   useEffect(() => {
     fetchAssets(true); 
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, []);
 
   const handleApplyFilter = () => fetchAssets(false);
@@ -97,12 +99,10 @@ function Assets() {
                 <label><input type="radio" name="type" value="All" checked={selectedType === 'All'} onChange={(e) => setSelectedType(e.target.value)} /> Tümü</label>
                 {availableTypes.map(t => (
                     <label key={t.assetTypeID}>
-                        {/* BURASI DÜZELTİLDİ: t.type */}
                         <input type="radio" name="type" value={t.assetTypeID} checked={parseInt(selectedType) === t.assetTypeID} onChange={(e) => setSelectedType(e.target.value)} /> {t.type}
                     </label>
                 ))}
             </div>
-            {/* Diğer kısımlar aynı */}
             <div className="filter-group">
                 <h4>Fiyat</h4>
                 <label><input type="radio" name="price" value="all" checked={selectedPrice === 'all'} onChange={(e) => setSelectedPrice(e.target.value)} /> Tümü</label>
@@ -121,7 +121,15 @@ function Assets() {
                 {loading ? <p style={{color:'white', textAlign:'center'}}>Yükleniyor...</p> : (
                     <>
                         {safeList.length === 0 ? (
-                            <p style={{color:'#aaa', textAlign:'center'}}>Uygun asset bulunamadı.</p>
+                           
+                            <div style={{textAlign:'center', padding:'50px', border:'1px dashed #444', borderRadius:'10px', marginTop:'20px'}}>
+                                <i className="fas fa-box-open" style={{fontSize:'40px', color:'#e94560', marginBottom:'15px'}}></i>
+                                <h3 style={{color:'#fff'}}>Sonuç Bulunamadı</h3>
+                                <p style={{color:'#aaa'}}>Aradığınız kriterlere uygun asset bulunamadı.</p>
+                                <button className="btn btn-secondary" onClick={handleClearFilter} style={{marginTop:'15px'}}>
+                                    Tüm Assetleri Göster
+                                </button>
+                            </div>
                         ) : (
                             <div className="games-grid">
                                 {currentAssets.map((asset) => (
@@ -137,6 +145,13 @@ function Assets() {
                             </div>
                         )}
                     </>
+                )}
+                {totalPages > 1 && (
+                    <div className="pagination-container">
+                        {Array.from({ length: totalPages }, (_, i) => (
+                            <button key={i + 1} onClick={() => paginate(i + 1)} className={`page-btn ${currentPage === i + 1 ? 'active' : ''}`}>{i + 1}</button>
+                        ))}
+                    </div>
                 )}
             </section>
         </main>
