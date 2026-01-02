@@ -454,6 +454,102 @@ app.post('/api/buy-asset', (req, res) => {
     });
 });
 
+// ==========================================
+// DASHBOARD İSTATİSTİKLERİ
+// ==========================================
+
+// 1. KULLANICININ TOPLAM İNDİRME GRAFİĞİ VERİLERİ (Günlük Bazda)
+app.get('/api/dashboard-stats/:userID', (req, res) => {
+    const userID = req.params.userID;
+    
+    // Hem oyun hem asset satışlarını tarihe göre birleştirip sayıyoruz
+    const sql = `
+        SELECT DATE_FORMAT(purchaseDate, '%Y-%m-%d') as saleDate, COUNT(*) as count 
+        FROM (
+            SELECT purchaseDate FROM userbygame UBG 
+            JOIN Games G ON UBG.game = G.gamesID 
+            JOIN UserGameDevelops UGD ON G.gamesID = UGD.game 
+            WHERE UGD.user = ?
+            UNION ALL
+            SELECT purchaseDate FROM userbyasset UBA 
+            JOIN Assets A ON UBA.asset = A.assetID 
+            JOIN UserAssetDevelops UAD ON A.assetID = UAD.asset 
+            WHERE UAD.user = ?
+        ) as AllSales
+        GROUP BY saleDate
+        ORDER BY saleDate ASC
+    `;
+
+    db.query(sql, [userID, userID], (err, data) => {
+        if(err) return res.status(500).json(err);
+        return res.json(data);
+    });
+});
+
+// 2. TEK BİR İÇERİĞİN DETAYLI SATIŞ LİSTESİ (Kim aldı, ne zaman aldı?)
+app.get('/api/item-sales-details', (req, res) => {
+    const { type, id } = req.query; // type: 'Game' veya 'Asset', id: içerik ID'si
+
+    let sql = "";
+    if (type === 'Game') {
+        sql = `
+            SELECT U.userName as buyerName, UBG.purchaseDate, UBG.price 
+            FROM userbygame UBG
+            JOIN user U ON UBG.user = U.userID
+            WHERE UBG.game = ?
+            ORDER BY UBG.purchaseDate DESC
+        `;
+    } else {
+        sql = `
+            SELECT U.userName as buyerName, UBA.purchaseDate, UBA.price 
+            FROM userbyasset UBA
+            JOIN user U ON UBA.user = U.userID
+            WHERE UBA.asset = ?
+            ORDER BY UBA.purchaseDate DESC
+        `;
+    }
+
+    db.query(sql, [id], (err, data) => {
+        if(err) return res.status(500).json(err);
+        return res.json(data);
+    });
+});
+
+// ==========================================
+// YENİ DASHBOARD GRAFİK VERİSİ (GARANTİ VERİ DÖNDÜRÜR)
+// ==========================================
+app.get('/api/publisher-total-stats/:userID', (req, res) => {
+    const userID = req.params.userID;
+    
+    const sql = `
+        SELECT 
+            G.gameName as name, 
+            (SELECT COUNT(*) FROM userbygame WHERE game = G.gamesID) as totalDownloads, 
+            'Oyun' as type
+        FROM games G
+        JOIN usergamedevelops UGD ON G.gamesID = UGD.game
+        WHERE UGD.user = ?
+        
+        UNION ALL
+        
+        SELECT 
+            A.assetName as name, 
+            (SELECT COUNT(*) FROM userbyasset WHERE asset = A.assetID) as totalDownloads, 
+            'Asset' as type
+        FROM assets A
+        JOIN userassetdevelops UAD ON A.assetID = UAD.asset
+        WHERE UAD.user = ?
+    `;
+
+    db.query(sql, [userID, userID], (err, data) => {
+        if(err) {
+            console.error("Grafik SQL Hatası:", err);
+            return res.status(500).json(err);
+        }
+        return res.json(data);
+    });
+});
+
 app.listen(3001, () => {
     console.log("Sunucu 3001 portunda çalışıyor...");
 });
