@@ -424,6 +424,46 @@ body.sidebar-open .content { filter: brightness(0.5); pointer-events: none; }
 }
 .btn-delete-confirm:hover { background-color: #b71c1c; }
 
+/* --- RESİM ÖNİZLEME STİLLERİ --- */
+.preview-area {
+    margin-top: 15px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+}
+
+.cover-preview-img {
+    width: 100%;
+    max-width: 300px;
+    height: 180px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 2px solid var(--accent-color);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+}
+
+.gallery-grid-preview {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 10px;
+    width: 100%;
+}
+
+.gallery-preview-img {
+    width: 100%;
+    height: 100px;
+    object-fit: cover;
+    border-radius: 6px;
+    border: 1px solid #555;
+    transition: transform 0.2s;
+}
+
+.gallery-preview-img:hover {
+    transform: scale(1.05);
+    border-color: var(--accent-color);
+}
+
 /* Seçim Kartları (Yeni Ekle Modalı) */
 .selection-buttons { display: flex; gap: 20px; margin-top: 20px; justify-content: center; }
 .selection-card {
@@ -438,4 +478,239 @@ body.sidebar-open .content { filter: brightness(0.5); pointer-events: none; }
     .dashboard-wrapper { flex-direction: column; }
     .dashboard-sidebar { width: 100%; position: static; margin-bottom: 30px; }
     .dashboard-header-section { flex-direction: column; }
+}
+
+/* =========================================== */
+/* SLIDER (GALERİ) STİLLERİ                    */
+/* =========================================== */
+.slider-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #000;
+}
+
+.slider-image {
+    width: 100%;
+    height: 100%;
+    object-fit: contain; /* Resmi kesmeden sığdırır */
+    display: block;
+}
+
+/* İleri/Geri Butonları */
+.slider-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: rgba(0, 0, 0, 0.5);
+    color: white;
+    border: none;
+    font-size: 24px;
+    padding: 15px;
+    cursor: pointer;
+    transition: background 0.3s;
+    z-index: 10;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.slider-btn:hover {
+    background-color: var(--accent-color);
+}
+
+.prev-btn { left: 10px; }
+.next-btn { right: 10px; }
+
+/* Alt Taraftaki Küçük Noktalar (Opsiyonel) */
+.slider-dots {
+    position: absolute;
+    bottom: 15px;
+    display: flex;
+    gap: 10px;
+    z-index: 10;
+}
+
+.dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+}
+
+.dot.active {
+    background-color: var(--accent-color);
+    transform: scale(1.2);
+}
+
+/* =========================================== */
+/* YENİ THUMBNAIL (KÜÇÜK RESİM) STİLLERİ       */
+/* =========================================== */
+
+/* Küçük resimlerin bulunduğu kapsayıcı şerit */
+.thumbnail-row {
+    display: flex;
+    flex-wrap: nowrap; /* Asla alt satıra geçme, yan yana dizil */
+    gap: 15px; /* Resimler arası boşluk arttı */
+    padding: 15px; /* Şeridin iç boşluğu */
+    margin-bottom: 25px;
+    overflow-x: auto; /* Yatayda taşarsa kaydırma çubuğu göster */
+    scroll-behavior: smooth; /* Kaydırma işlemi yumuşak olsun */
+    justify-content: flex-start; /* Sola yasla, böylece sağa doğru kayar */
+    background-color: rgba(0, 0, 0, 0.2); /* Hafif bir arka plan şeridi */
+    border-radius: 12px;
+    /* Yaklaşık 8 görselin sığacağı bir genişlikten sonra taşma başlar */
+}
+
+/* Kaydırma çubuğunu (Scrollbar) sitenin temasına uydurma (Chrome/Edge/Safari için) */
+.thumbnail-row::-webkit-scrollbar {
+    height: 10px; /* Çubuğun yüksekliği */
+}
+
+.thumbnail-row::-webkit-scrollbar-track {
+    background: #1a1a2e; /* Çubuk yolu rengi (sitenin arka planı) */
+    border-radius: 10px;
+}
+
+.thumbnail-row::-webkit-scrollbar-thumb {
+    background: var(--accent-color); /* Kaydırma tutamacı rengi (Pembe) */
+    border-radius: 10px;
+    border: 2px solid #1a1a2e; /* Etrafında ince bir boşluk */
+}
+
+.thumbnail-row::-webkit-scrollbar-thumb:hover {
+    background: #c9374d; /* Tutamacın üzerine gelinceki rengi */
+}
+
+
+/* Tekil küçük resimler */
+.thumb-img {
+    /* DAHA BÜYÜK BOYUTLAR */
+    width: 140px; 
+    height: 85px;
+    
+    object-fit: cover; /* Resmi kutuya doldur */
+    border-radius: 8px;
+    cursor: pointer;
+    opacity: 0.5; /* Pasifken sönük */
+    border: 3px solid transparent; /* Kenarlık payı */
+    transition: all 0.3s ease;
+    
+    /* ÇOK ÖNEMLİ: Çok resim olduğunda sıkışıp küçülmeyi engeller */
+    flex-shrink: 0; 
+}
+
+.thumb-img:hover {
+    opacity: 0.8;
+    transform: translateY(-3px); /* Üzerine gelince hafif yukarı kalksın */
+}
+
+/* Seçili (Aktif) olan küçük resim */
+.thumb-img.active {
+    opacity: 1; /* Tam parlaklık */
+    border-color: var(--accent-color); /* Pembe neon kenarlık */
+    transform: scale(1.05); /* Hafifçe büyüsün */
+    box-shadow: 0 5px 15px rgba(233, 69, 96, 0.4); /* Pembe parlama efekti */
+}
+
+/* =========================================== */
+/* BÜYÜK DÜZENLEME PENCERESİ AYARLARI          */
+/* =========================================== */
+
+/* Modal Genişliği */
+.large-modal {
+    width: 90% !important;        /* Ekranın %90'ını kaplasın */
+    max-width: 1200px !important; /* Ama çok devasa ekranlarda 1200px'de dursun */
+    padding: 30px !important;     /* İç boşluk arttı */
+}
+
+/* Form Elemanları (Input ve Textarea) */
+.large-modal input, 
+.large-modal textarea {
+    font-size: 16px !important;   /* Yazılar daha okunaklı */
+    padding: 15px !important;     /* Kutu içi boşluk arttı */
+    background-color: #1a1a2e;    /* Koyu tema uyumu */
+    color: white;
+    border: 1px solid #444;
+}
+
+/* Açıklama Alanı Yüksekliği */
+.large-modal textarea {
+    min-height: 300px !important; /* Açıklama kutusu çok daha uzun */
+    line-height: 1.6;             /* Satır arası boşluk */
+}
+
+/* Etiketler (Label) */
+.large-modal label {
+    font-size: 18px !important;   /* Başlıklar daha belirgin */
+    margin-bottom: 10px !important;
+    display: block;
+    color: #e94560;
+}
+
+/* --- DASHBOARD VIEW BUTTON --- */
+.btn-view {
+    background-color: #27ae60; /* Yeşil */
+    color: white;
+    margin-top: 12px;
+    margin-bottom: 8px; /* Altındaki butonla mesafe */
+    width: 100%; /* Tam genişlik */
+}
+
+.btn-view:hover {
+    background-color: #2ecc71; /* Açık yeşil */
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(46, 204, 113, 0.3);
+}
+
+/* --- DASHBOARD COMMENT BUTTON --- */
+.btn-comments {
+    background-color: #f39c12; /* Turuncu/Altın rengi */
+    color: white;
+    margin-bottom: 8px;
+    width: 100%;
+}
+
+.btn-comments:hover {
+    background-color: #e67e22; /* Koyu turuncu */
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(243, 156, 18, 0.3);
+}
+
+/* --- DASHBOARD YORUM MODALI LİSTESİ --- */
+.dashboard-comment-item {
+    background-color: #161625;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    border-left: 4px solid #f39c12; /* Butonla uyumlu kenarlık */
+}
+
+.dash-comment-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+}
+
+.dash-comment-user {
+    font-weight: bold;
+    color: #f39c12;
+}
+
+.dash-comment-date {
+    color: #888;
+    font-size: 0.8rem;
+}
+
+.dash-comment-text {
+    color: #ddd;
+    line-height: 1.5;
 }

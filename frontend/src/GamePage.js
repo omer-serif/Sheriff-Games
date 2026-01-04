@@ -3,12 +3,16 @@ import { useParams, Link } from 'react-router-dom';
 import Navbar from './navbar';
 import './App.css'; 
 
+const FALLBACK_IMAGE = "data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22300%22%20height%3D%22150%22%20viewBox%3D%220%200%20300%20150%22%3E%3Crect%20fill%3D%22%2322223b%22%20width%3D%22300%22%20height%3D%22150%22%2F%3E%3Ctext%20fill%3D%22%23e94560%22%20font-family%3D%22sans-serif%22%20font-size%3D%2220%22%20dy%3D%2210.5%22%20font-weight%3D%22bold%22%20x%3D%2250%25%22%20y%3D%2250%25%22%20text-anchor%3D%22middle%22%3EResim%20Yok%3C%2Ftext%3E%3C%2Fsvg%3E";
+
 function GamePage() {
   const { id } = useParams();
   const [game, setGame] = useState(null);
   const [loading, setLoading] = useState(true);
   
-  // YORUM STATE'LERİ
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [allImages, setAllImages] = useState([]);
+
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState("");
   const [user, setUser] = useState(null);
@@ -17,16 +21,19 @@ function GamePage() {
     const currentUser = JSON.parse(localStorage.getItem("currentUser"));
     setUser(currentUser);
 
-    // Oyun Detayı
     fetch(`http://localhost:3001/games/${id}`)
       .then(res => res.json())
       .then(data => {
         setGame(data);
+        const imagesList = [data.gameImage];
+        if (data.galleryImages && Array.isArray(data.galleryImages) && data.galleryImages.length > 0) {
+            imagesList.push(...data.galleryImages);
+        }
+        setAllImages(imagesList);
         setLoading(false);
       })
       .catch(err => console.error("Hata:", err));
 
-    // Yorumları Çek
     fetchComments();
   }, [id]);
 
@@ -35,6 +42,19 @@ function GamePage() {
         .then(res => res.json())
         .then(data => setComments(data))
         .catch(err => console.error("Yorum Hatası:", err));
+  };
+
+  const nextSlide = () => {
+      setCurrentImageIndex((prev) => (prev === allImages.length - 1 ? 0 : prev + 1));
+  };
+
+  const prevSlide = () => {
+      setCurrentImageIndex((prev) => (prev === 0 ? allImages.length - 1 : prev - 1));
+  };
+
+  const getImageSrc = (imgName) => {
+      if (!imgName || imgName === "null") return FALLBACK_IMAGE;
+      return `http://localhost:3001/uploads/${imgName}`;
   };
 
   const handlePostComment = (e) => {
@@ -63,29 +83,25 @@ function GamePage() {
       });
   };
 
-  // --- İNDİRME / SATIN ALMA FONKSİYONU ---
   const handleDownload = () => {
     if (!user) {
         alert("İndirmek için giriş yapmalısınız!");
         return;
     }
 
-    // 1. Veritabanına Kaydet (UserByGame tablosu)
     fetch('http://localhost:3001/api/buy-game', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
             userID: user.userID,
             gameID: game.gamesID,
-            price: game.gamePrice || 0 // Ücretsizse 0 gönder
+            price: game.gamePrice || 0 
         })
     })
     .then(res => res.json())
     .then(data => {
         if(data.status === "Success") {
             alert("İşlem Başarılı! İndirme Başlıyor...");
-            
-            // 2. Dosyayı İndir (Tarayıcıda yeni sekmede açarak indirmeyi tetikler)
             if (game.gameFile) {
                 const fileUrl = `http://localhost:3001/uploads/${game.gameFile}`;
                 window.open(fileUrl, '_blank');
@@ -99,12 +115,6 @@ function GamePage() {
     .catch(err => console.error("Satın alma hatası:", err));
   };
 
-  const mainImage = game && game.gameImage 
-    ? `http://localhost:3001/uploads/${game.gameImage}`
-    : "https://via.placeholder.com/800x450?text=Resim+Yok";
-
-  const images = [mainImage]; 
-
   if (loading) return <div className="loading-text">Yükleniyor...</div>;
   if (!game) return <div className="loading-text">Oyun bulunamadı.</div>;
 
@@ -117,11 +127,39 @@ function GamePage() {
                 <h1>{game.gameName}</h1>
             </header>
 
+            {/* --- SLIDER BÖLÜMÜ --- */}
             <section className="game-gallery">
-                <div className="detail-image-wrapper">
-                    <img src={images[0]} alt={game.gameName} className="detail-image" />
+                <div className="slider-container">
+                    {allImages.length > 1 && (
+                        <button className="slider-btn prev-btn" onClick={prevSlide}>&#10094;</button>
+                    )}
+                    
+                    <img 
+                        src={getImageSrc(allImages[currentImageIndex])} 
+                        alt={`Slide ${currentImageIndex}`} 
+                        className="slider-image" 
+                    />
+
+                    {allImages.length > 1 && (
+                        <button className="slider-btn next-btn" onClick={nextSlide}>&#10095;</button>
+                    )}
                 </div>
             </section>
+
+            {/* --- KÜÇÜK RESİMLER (THUMBNAILS) - ARTIK DIŞARIDA --- */}
+            {allImages.length > 1 && (
+                <div className="thumbnail-row">
+                    {allImages.map((img, index) => (
+                        <img 
+                            key={index}
+                            src={getImageSrc(img)}
+                            alt={`Thumb ${index}`}
+                            className={`thumb-img ${currentImageIndex === index ? 'active' : ''}`}
+                            onClick={() => setCurrentImageIndex(index)}
+                        />
+                    ))}
+                </div>
+            )}
 
             <section className="game-body-layout">
                 <div className="game-description-column">
@@ -153,7 +191,6 @@ function GamePage() {
                             </span>
                         </div>
                         
-                        {/* BUTONA ONCLICK EKLENDİ */}
                         <button className="btn btn-primary buy-btn" onClick={handleDownload}>
                             {(!game.gamePrice || game.gamePrice === 0) ? <><i className="fas fa-download"></i> İNDİR</> : <><i className="fas fa-shopping-cart"></i> SATIN AL</>}
                         </button>
@@ -167,7 +204,6 @@ function GamePage() {
                 </aside>
             </section>
 
-            {/* --- YORUM ALANI --- */}
             <section className="comments-section">
                 <h2>Kullanıcı Yorumları ({comments.length})</h2>
                 <div className="comments-list" style={{marginBottom: '30px'}}>

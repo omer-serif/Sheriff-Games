@@ -7,6 +7,7 @@ function CreateGame() {
   const navigate = useNavigate();
   const coverInputRef = useRef(null);
   const gameFileInputRef = useRef(null);
+  const galleryInputRef = useRef(null); 
 
   useEffect(() => {
     const currentUser = JSON.parse(localStorage.getItem("currentUser"));
@@ -25,16 +26,19 @@ function CreateGame() {
   const [availableTypes, setAvailableTypes] = useState([]); 
   const [selectedTypes, setSelectedTypes] = useState([]); 
 
+  // DOSYA VE ÖNİZLEME STATE'LERİ
   const [coverImage, setCoverImage] = useState(null);
+  const [coverPreview, setCoverPreview] = useState(null); // Kapak önizleme URL'si
+
   const [gameFile, setGameFile] = useState(null);
+  
+  const [galleryFiles, setGalleryFiles] = useState([]); 
+  const [galleryPreviews, setGalleryPreviews] = useState([]); // Galeri önizleme URL'leri
 
   useEffect(() => {
       fetch('http://localhost:3001/game-types')
         .then(res => res.json())
-        .then(data => {
-            console.log("Kategoriler:", data);
-            setAvailableTypes(data);
-        })
+        .then(data => setAvailableTypes(data))
         .catch(err => console.error("Hata:", err));
   }, []);
 
@@ -44,6 +48,26 @@ function CreateGame() {
           setSelectedTypes(prev => [...prev, typeID]);
       } else {
           setSelectedTypes(prev => prev.filter(id => id !== typeID));
+      }
+  };
+
+  // --- KAPAK RESMİ SEÇİLİNCE ---
+  const handleCoverChange = (e) => {
+      const file = e.target.files[0];
+      if (file) {
+          setCoverImage(file);
+          setCoverPreview(URL.createObjectURL(file)); // Önizleme URL'si oluştur
+      }
+  };
+
+  // --- GALERİ RESİMLERİ SEÇİLİNCE ---
+  const handleGalleryChange = (e) => {
+      const files = Array.from(e.target.files);
+      if (files.length > 0) {
+          setGalleryFiles(files);
+          // Her dosya için bir önizleme URL'si oluştur
+          const previewUrls = files.map(file => URL.createObjectURL(file));
+          setGalleryPreviews(previewUrls);
       }
   };
 
@@ -67,6 +91,10 @@ function CreateGame() {
     if (coverImage) formData.append('coverImage', coverImage);
     if (gameFile) formData.append('gameFile', gameFile);
 
+    for (let i = 0; i < galleryFiles.length; i++) {
+        formData.append('galleryImages', galleryFiles[i]);
+    }
+
     try {
         const response = await fetch('http://localhost:3001/api/add-game', {
             method: 'POST',
@@ -75,7 +103,7 @@ function CreateGame() {
         const result = await response.json();
 
         if (result.status === "Success") {
-            alert("Tebrikler! Oyununuz başarıyla yayımlandı 🚀");
+            alert("Tebrikler! Oyununuz ve görselleriniz başarıyla yayımlandı 🚀");
             navigate('/'); 
         } else {
             alert("Hata: " + result.message);
@@ -110,18 +138,64 @@ function CreateGame() {
 
                     <section className="form-section">
                         <h3>2. Görseller ve Dosyalar</h3>
+                        
+                        {/* KAPAK GÖRSELİ */}
                         <div className="form-group">
-                            <label>Kapak Görseli *</label>
+                            <label>Kapak Görseli (Zorunlu) *</label>
                             <div className="file-upload-box" onClick={() => coverInputRef.current.click()}>
-                                <input type="file" accept="image/*" required ref={coverInputRef} onChange={(e) => setCoverImage(e.target.files[0])} />
-                                <span className="file-label"><i className="fas fa-image"></i> {coverImage ? coverImage.name : "Seç"}</span>
+                                <input 
+                                    type="file" 
+                                    accept="image/*" 
+                                    required 
+                                    ref={coverInputRef} 
+                                    onChange={handleCoverChange} // Fonksiyon değişti
+                                />
+                                <span className="file-label">
+                                    <i className="fas fa-image"></i> {coverImage ? "Kapak Resmi Değiştir" : "Kapak Resmi Seç"}
+                                </span>
                             </div>
+                            
+                            {/* KAPAK ÖNİZLEME ALANI */}
+                            {coverPreview && (
+                                <div className="preview-area">
+                                    <img src={coverPreview} alt="Kapak Önizleme" className="cover-preview-img" />
+                                </div>
+                            )}
                         </div>
+
+                        {/* YENİ: OYUN İÇİ GALERİ GÖRSELLERİ */}
                         <div className="form-group">
-                            <label>Oyun Dosyası *</label>
+                            <label>Oyun İçi Görseller (Çoklu Seçim - Opsiyonel)</label>
+                            <div className="file-upload-box" onClick={() => galleryInputRef.current.click()}>
+                                <input 
+                                    type="file" 
+                                    accept="image/*" 
+                                    multiple 
+                                    ref={galleryInputRef} 
+                                    onChange={handleGalleryChange} // Fonksiyon değişti
+                                />
+                                <span className="file-label">
+                                    <i className="fas fa-images"></i> 
+                                    {galleryFiles.length > 0 ? `${galleryFiles.length} adet görsel seçildi` : "Galeri Görselleri Seç"}
+                                </span>
+                            </div>
+
+                            {/* GALERİ ÖNİZLEME ALANI */}
+                            {galleryPreviews.length > 0 && (
+                                <div className="preview-area gallery-grid-preview">
+                                    {galleryPreviews.map((src, index) => (
+                                        <img key={index} src={src} alt={`Galeri ${index}`} className="gallery-preview-img" />
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* OYUN DOSYASI */}
+                        <div className="form-group">
+                            <label>Oyun Dosyası (.zip, .exe vb.) *</label>
                             <div className="file-upload-box" onClick={() => gameFileInputRef.current.click()}>
                                 <input type="file" required ref={gameFileInputRef} onChange={(e) => setGameFile(e.target.files[0])} />
-                                <span className="file-label"><i className="fas fa-upload"></i> {gameFile ? gameFile.name : "Yükle"}</span>
+                                <span className="file-label"><i className="fas fa-upload"></i> {gameFile ? gameFile.name : "Dosya Yükle"}</span>
                             </div>
                         </div>
                     </section>
@@ -140,7 +214,6 @@ function CreateGame() {
                                             onChange={handleTypeChange}
                                             style={{width: '18px', height: '18px', marginRight: '10px'}}
                                         />
-                                        {/* İŞTE DÜZELTME BURADA: type.gameType */}
                                         {type.gameType} 
                                     </label>
                                 ))}

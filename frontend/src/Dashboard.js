@@ -1,42 +1,59 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-// Grafikler için gerekli kütüphaneler
 import { 
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LabelList 
 } from 'recharts';
 import Navbar from './navbar';
 import './App.css';
 
-// Resim yoksa gösterilecek varsayılan görsel
 const FALLBACK_IMAGE = "data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22300%22%20height%3D%22150%22%20viewBox%3D%220%200%20300%20150%22%3E%3Crect%20fill%3D%22%2322223b%22%20width%3D%22300%22%20height%3D%22150%22%2F%3E%3Ctext%20fill%3D%22%23e94560%22%20font-family%3D%22sans-serif%22%20font-size%3D%2220%22%20dy%3D%2210.5%22%20font-weight%3D%22bold%22%20x%3D%2250%25%22%20y%3D%2250%25%22%20text-anchor%3D%22middle%22%3EResim%20Yok%3C%2Ftext%3E%3C%2Fsvg%3E";
 
 function Dashboard() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   
-  // Veri State'leri
   const [myGames, setMyGames] = useState([]);
   const [myAssets, setMyAssets] = useState([]);
   const [mySales, setMySales] = useState([]);
   const [mainChartData, setMainChartData] = useState([]); 
   
-  // Görünüm State'leri
   const [activeTab, setActiveTab] = useState('games');
   const [loading, setLoading] = useState(true);
 
-  // --- DÜZENLEME VE SİLME STATE'LERİ (SORUNSUZ ÇALIŞMASI İÇİN KONTROL EDİLDİ) ---
+  // --- DÜZENLEME STATE'LERİ ---
   const [editingItem, setEditingItem] = useState(null); 
-  const [editForm, setEditForm] = useState({ name: '', description: '', price: 0 }); // Fiyat varsayılan 0
+  const [editForm, setEditForm] = useState({ name: '', description: '', price: 0 });
+  
+  const [currentCoverPreview, setCurrentCoverPreview] = useState(null);
+  const [newCoverFile, setNewCoverFile] = useState(null);
+  
+  const [currentGallery, setCurrentGallery] = useState([]); 
+  const [newGalleryFiles, setNewGalleryFiles] = useState([]); 
+  
+  const [newGalleryPreviews, setNewGalleryPreviews] = useState([]);
+
+  // SİLİNECEK RESİMLER
+  const [deletedImageIDs, setDeletedImageIDs] = useState([]);
+
   const [deletingItem, setDeletingItem] = useState(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  
-  // Detay Modalı State'leri
+  const [imageToDelete, setImageToDelete] = useState(null); 
+
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedItemDetails, setSelectedItemDetails] = useState([]);
   const [selectedItemName, setSelectedItemName] = useState("");
   const [modalChartData, setModalChartData] = useState([]); 
 
-  // 1. VERİLERİ ÇEKME (Sayfa Yüklendiğinde)
+  // YENİ: YORUM MODALI STATE'LERİ
+  const [showCommentsModal, setShowCommentsModal] = useState(false);
+  const [selectedComments, setSelectedComments] = useState([]);
+  const [selectedItemNameForComments, setSelectedItemNameForComments] = useState("");
+  const [commentsLoading, setCommentsLoading] = useState(false);
+
+
+  const coverInputRef = useRef(null);
+  const galleryInputRef = useRef(null);
+
   useEffect(() => {
     const currentUser = JSON.parse(localStorage.getItem("currentUser"));
     if (!currentUser) {
@@ -57,7 +74,6 @@ function Dashboard() {
         setMyAssets(assetsData || []);
         setMySales(salesData || []);
         
-        // Grafik verisini sayıya çevir
         const processedStats = (statsData || []).map(item => ({
             name: item.Name || item.name, 
             totalDownloads: Number(item.totalDownloads || 0),
@@ -70,45 +86,90 @@ function Dashboard() {
 
   }, [navigate]);
 
-  // Resim URL YARDIMCISI
   const getImageSrc = (imageName) => {
       if (!imageName || imageName === "null" || imageName === "") return FALLBACK_IMAGE;
       if (imageName.startsWith("http")) return FALLBACK_IMAGE;
       return `http://localhost:3001/uploads/${imageName}`;
   };
 
-  // Resim Yüklenemezse Hata Yönetimi
-  const handleImageError = (e) => {
-      e.target.onerror = null; 
-      e.target.src = FALLBACK_IMAGE;
-  };
+  const handleImageError = (e) => { e.target.onerror = null; e.target.src = FALLBACK_IMAGE; };
 
-  // --- 2. DÜZENLEME FONKSİYONLARI (DÜZELTİLDİ VE SAĞLAMLAŞTIRILDI) ---
   const handleEditClick = (item, type) => {
-    // Fiyatın null veya undefined olma durumuna karşı önlem (|| 0)
     const priceValue = (type === 'Game' ? item.gamePrice : item.assetPrice) || 0;
+    const coverImg = type === 'Game' ? item.gameImage : item.assetImage;
+    const itemID = type === 'Game' ? item.gamesID : item.assetID;
 
-    setEditingItem({ ...item, type }); 
+    setEditingItem({ ...item, type, id: itemID }); 
     setEditForm({
         name: type === 'Game' ? item.gameName : item.assetName,
         description: type === 'Game' ? item.gameDescription : item.assetDescription,
         price: priceValue
     });
+
+    setCurrentCoverPreview(getImageSrc(coverImg));
+    setNewCoverFile(null);
+    setNewGalleryFiles([]);
+    setNewGalleryPreviews([]); 
+    setDeletedImageIDs([]); 
+
+    fetch(`http://localhost:3001/api/get-edit-details/${type}/${itemID}`)
+        .then(res => res.json())
+        .then(data => {
+            setCurrentGallery(data.galleryImages || []);
+        })
+        .catch(err => console.error("Galeri detay hatası:", err));
+  };
+
+  const handleCoverChange = (e) => {
+      const file = e.target.files[0];
+      if (file) {
+          setNewCoverFile(file);
+          setCurrentCoverPreview(URL.createObjectURL(file));
+      }
+  };
+
+  const handleGalleryAdd = (e) => {
+      const files = Array.from(e.target.files);
+      setNewGalleryFiles(files);
+
+      const previews = files.map(file => URL.createObjectURL(file));
+      setNewGalleryPreviews(previews);
+  };
+
+  const handleImageDeleteClick = (imageID) => {
+      setImageToDelete(imageID); 
+  };
+
+  const confirmDeleteImage = () => {
+      if (!imageToDelete) return;
+      setCurrentGallery(prev => prev.filter(img => img.imageID !== imageToDelete));
+      setDeletedImageIDs(prev => [...prev, imageToDelete]);
+      setImageToDelete(null);
   };
 
   const handleUpdate = async (e) => {
     e.preventDefault();
+    
+    const formData = new FormData();
+    formData.append('type', editingItem.type);
+    formData.append('id', editingItem.id);
+    formData.append('name', editForm.name);
+    formData.append('description', editForm.description);
+    formData.append('price', editForm.price);
+    formData.append('deletedImageIDs', JSON.stringify(deletedImageIDs));
+
+    if (newCoverFile) {
+        formData.append('coverImage', newCoverFile);
+    }
+
+    for (let i = 0; i < newGalleryFiles.length; i++) {
+        formData.append('newGalleryImages', newGalleryFiles[i]);
+    }
+
     try {
         const response = await fetch('http://localhost:3001/api/update-item', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                type: editingItem.type,
-                id: editingItem.type === 'Game' ? editingItem.gamesID : editingItem.assetID,
-                name: editForm.name,
-                description: editForm.description,
-                price: Number(editForm.price) // Göndermeden önce sayıya çevir
-            })
+            method: 'PUT', 
+            body: formData 
         });
         const result = await response.json();
         if(result.status === "Success") {
@@ -121,21 +182,17 @@ function Dashboard() {
     } catch (error) { alert("Sunucu hatası: " + error.message); }
   };
 
-  // --- 3. SİLME FONKSİYONLARI (KONTROL EDİLDİ) ---
-  const handleDeleteClick = (item, type) => { 
-      setDeletingItem({ ...item, type }); 
-  };
+  const handleDeleteClick = (item, type) => { setDeletingItem({ ...item, type }); };
 
   const handleDeleteConfirm = async () => {
     if (!deletingItem) return;
+    const id = deletingItem.type === 'Game' ? deletingItem.gamesID : deletingItem.assetID;
+    
     try {
         const response = await fetch('http://localhost:3001/api/delete-item', {
             method: 'DELETE',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                type: deletingItem.type,
-                id: deletingItem.type === 'Game' ? deletingItem.gamesID : deletingItem.assetID
-            })
+            body: JSON.stringify({ type: deletingItem.type, id: id })
         });
         const result = await response.json();
         if (result.status === "Success") {
@@ -146,7 +203,6 @@ function Dashboard() {
     } catch (error) { alert(`HATA: ${error.message}`); }
   };
 
-  // --- 4. DETAY GÖRÜNTÜLEME FONKSİYONU ---
   const handleViewDetails = (item) => {
       const type = activeTab === 'games' ? 'Game' : 'Asset';
       const id = activeTab === 'games' ? item.gamesID : item.assetID;
@@ -158,26 +214,56 @@ function Dashboard() {
         .then(res => res.json())
         .then(data => {
             setSelectedItemDetails(data);
-            
-            // Grafik verisi hazırlama
             const chartMap = {};
             data.forEach(sale => {
                 const dateKey = new Date(sale.purchaseDate).toLocaleDateString('tr-TR');
                 chartMap[dateKey] = (chartMap[dateKey] || 0) + 1;
             });
-
             const processedChartData = Object.keys(chartMap).map(date => ({
                 tarih: date,
                 indirme: Number(chartMap[date])
             }));
-
             setModalChartData(processedChartData);
             setShowDetailModal(true);
         })
         .catch(err => console.error("Detay çekme hatası:", err));
   };
 
-  // Grafik Tooltip'i (Arka planı şeffaf)
+  const handleViewPage = (id, type) => {
+      if(type === 'Game') {
+          navigate(`/game/${id}`);
+      } else {
+          navigate(`/asset/${id}`);
+      }
+  };
+
+  // --- YENİ: YORUMLARI GÖRÜNTÜLEME FONKSİYONU ---
+  const handleViewComments = (item, type) => {
+      const id = type === 'Game' ? item.gamesID : item.assetID;
+      const name = type === 'Game' ? item.gameName : item.assetName;
+      
+      setSelectedItemNameForComments(name);
+      setCommentsLoading(true);
+      setShowCommentsModal(true); // Modalı aç
+
+      const endpoint = type === 'Game' 
+          ? `http://localhost:3001/api/game-comments/${id}`
+          : `http://localhost:3001/api/asset-comments/${id}`;
+
+      fetch(endpoint)
+          .then(res => res.json())
+          .then(data => {
+              setSelectedComments(data);
+              setCommentsLoading(false);
+          })
+          .catch(err => {
+              console.error("Yorum hatası:", err);
+              setCommentsLoading(false);
+              setSelectedComments([]);
+          });
+  };
+
+
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
       return (
@@ -201,9 +287,7 @@ function Dashboard() {
         
         <aside className="dashboard-sidebar">
             <div className="profile-info">
-                <div className="avatar-circle">
-                    {user.userName ? user.userName.charAt(0).toUpperCase() : "U"}
-                </div>
+                <div className="avatar-circle">{user.userName ? user.userName.charAt(0).toUpperCase() : "U"}</div>
                 <h4>{user.userName}</h4>
                 <p style={{color:'#aaa', fontSize:'12px'}}>Geliştirici Hesabı</p>
             </div>
@@ -225,8 +309,6 @@ function Dashboard() {
         </aside>
 
         <main className="dashboard-content">
-            
-            {/* --- ANA GRAFİK ALANI --- */}
             <div className="panel" style={{marginBottom:'30px'}}>
                 <h2>Genel Performans</h2>
                 <div className="chart-panel">
@@ -245,12 +327,9 @@ function Dashboard() {
                                 </BarChart>
                             </ResponsiveContainer>
                         </div>
-                    ) : (
-                        <p style={{color:'#aaa', textAlign:'center', padding:'40px'}}>Henüz veri yok.</p>
-                    )}
+                    ) : (<p style={{color:'#aaa', textAlign:'center', padding:'40px'}}>Henüz veri yok.</p>)}
                 </div>
                 
-                {/* Özet Kartlar */}
                 <section className="stats-grid">
                     <div className="stat-card accent-card">
                         <i className="fas fa-download stat-icon"></i>
@@ -265,7 +344,6 @@ function Dashboard() {
                 </section>
             </div>
 
-            {/* OYUNLAR TABI */}
             {activeTab === 'games' && (
                 <div className="panel">
                     <h3>Yayınlanan Oyunlar</h3>
@@ -274,22 +352,21 @@ function Dashboard() {
                             {myGames.map(game => (
                                 <div key={game.gamesID} className="dash-item-card">
                                     <div className="dash-card-img-wrapper">
-                                        <img 
-                                            src={getImageSrc(game.gameImage || game.coverImage)} 
-                                            alt={game.gameName} className="dash-card-img" onError={handleImageError}
-                                        />
+                                        <img src={getImageSrc(game.gameImage || game.coverImage)} alt={game.gameName} className="dash-card-img" onError={handleImageError} />
                                     </div>
                                     <div className="dash-card-body">
                                         <h4>{game.gameName}</h4>
                                         <p style={{color:'#e94560', fontWeight:'bold'}}>{game.gamePrice > 0 ? `₺${game.gamePrice}` : "Ücretsiz"}</p>
                                         <div className="dash-btn-group">
-                                            {/* DÜZENLE VE SİL BUTONLARI BURADA */}
                                             <button onClick={() => handleEditClick(game, 'Game')} className="btn-dash btn-edit"><i className="fas fa-edit"></i> Düzenle</button>
                                             <button onClick={() => handleDeleteClick(game, 'Game')} className="btn-dash btn-delete"><i className="fas fa-trash"></i> Sil</button>
                                         </div>
-                                        <button onClick={() => handleViewDetails(game)} className="btn-dash btn-detail">
-                                            <i className="fas fa-chart-bar"></i> Detay & Grafik
-                                        </button>
+                                        <button onClick={() => handleViewPage(game.gamesID, 'Game')} className="btn-dash btn-view"><i className="fas fa-eye"></i> Sayfayı Görüntüle</button>
+                                        
+                                        {/* YENİ EKLENEN YORUM BUTONU */}
+                                        <button onClick={() => handleViewComments(game, 'Game')} className="btn-dash btn-comments"><i className="fas fa-comments"></i> Yorumları Gör</button>
+                                        
+                                        <button onClick={() => handleViewDetails(game)} className="btn-dash btn-detail"><i className="fas fa-chart-bar"></i> Detay & Grafik</button>
                                     </div>
                                 </div>
                             ))}
@@ -298,7 +375,6 @@ function Dashboard() {
                 </div>
             )}
 
-            {/* ASSETLER TABI */}
             {activeTab === 'assets' && (
                 <div className="panel">
                     <h3>Yayınlanan Assetler</h3>
@@ -307,22 +383,21 @@ function Dashboard() {
                             {myAssets.map(asset => (
                                 <div key={asset.assetID} className="dash-item-card">
                                     <div className="dash-card-img-wrapper">
-                                        <img 
-                                            src={getImageSrc(asset.assetImage || asset.coverImage)} 
-                                            alt={asset.assetName} className="dash-card-img" onError={handleImageError}
-                                        />
+                                        <img src={getImageSrc(asset.assetImage || asset.coverImage)} alt={asset.assetName} className="dash-card-img" onError={handleImageError} />
                                     </div>
                                     <div className="dash-card-body">
                                         <h4>{asset.assetName}</h4>
                                         <p style={{color:'#e94560', fontWeight:'bold'}}>{asset.assetPrice > 0 ? `₺${asset.assetPrice}` : "Ücretsiz"}</p>
                                         <div className="dash-btn-group">
-                                            {/* DÜZENLE VE SİL BUTONLARI BURADA */}
                                             <button onClick={() => handleEditClick(asset, 'Asset')} className="btn-dash btn-edit"><i className="fas fa-edit"></i> Düzenle</button>
                                             <button onClick={() => handleDeleteClick(asset, 'Asset')} className="btn-dash btn-delete"><i className="fas fa-trash"></i> Sil</button>
                                         </div>
-                                        <button onClick={() => handleViewDetails(asset)} className="btn-dash btn-detail">
-                                            <i className="fas fa-chart-bar"></i> Detay & Grafik
-                                        </button>
+                                        <button onClick={() => handleViewPage(asset.assetID, 'Asset')} className="btn-dash btn-view"><i className="fas fa-eye"></i> Sayfayı Görüntüle</button>
+                                        
+                                        {/* YENİ EKLENEN YORUM BUTONU */}
+                                        <button onClick={() => handleViewComments(asset, 'Asset')} className="btn-dash btn-comments"><i className="fas fa-comments"></i> Yorumları Gör</button>
+
+                                        <button onClick={() => handleViewDetails(asset)} className="btn-dash btn-detail"><i className="fas fa-chart-bar"></i> Detay & Grafik</button>
                                     </div>
                                 </div>
                             ))}
@@ -331,7 +406,6 @@ function Dashboard() {
                 </div>
             )}
 
-            {/* SATIŞ TABI */}
             {activeTab === 'sales' && (
                 <div className="panel">
                     <h3>İşlem Geçmişi</h3>
@@ -355,9 +429,6 @@ function Dashboard() {
         </main>
       </div>
 
-      {/* --- MODALLAR (DÜZENLEME VE SİLME PENCERELERİ) --- */}
-      
-      {/* 1. YENİ İÇERİK SEÇİM MODALI */}
       {showCreateModal && (
         <div className="modal-overlay" onClick={() => setShowCreateModal(false)}>
             <div className="modal-content" onClick={(e) => e.stopPropagation()}>
@@ -373,31 +444,91 @@ function Dashboard() {
         </div>
       )}
 
-      {/* 2. DÜZENLEME MODALI (KESİN ÇALIŞACAK ŞEKİLDE KONTROL EDİLDİ) */}
       {editingItem && (
         <div className="modal-overlay" onClick={() => setEditingItem(null)}>
-            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-content large-modal" onClick={(e) => e.stopPropagation()} style={{maxHeight:'95vh', overflowY:'auto'}}>
                 <h3>Düzenle: {editingItem.type === 'Game' ? 'Oyun' : 'Asset'}</h3>
                 <form onSubmit={handleUpdate}>
-                    <label>Ad</label>
-                    <input type="text" value={editForm.name} onChange={e => setEditForm({...editForm, name: e.target.value})} required />
+                    <div style={{display:'flex', gap:'30px', flexWrap:'wrap'}}>
+                        <div style={{flex: 1, minWidth:'350px'}}>
+                            <label>Ad</label>
+                            <input type="text" value={editForm.name} onChange={e => setEditForm({...editForm, name: e.target.value})} required />
+                            
+                            <label>Açıklama</label>
+                            <textarea rows="15" value={editForm.description} onChange={e => setEditForm({...editForm, description: e.target.value})} required></textarea>
+                            
+                            <label>Fiyat (₺)</label>
+                            <input type="number" min="0" step="0.01" value={editForm.price} onChange={e => setEditForm({...editForm, price: e.target.value})} required />
+                        </div>
+
+                        <div style={{flex: 1, minWidth:'350px'}}>
+                            <label>Kapak Görseli</label>
+                            <div className="file-upload-box" style={{padding:'20px', marginBottom:'20px', backgroundColor:'#161625'}} onClick={() => coverInputRef.current.click()}>
+                                <input type="file" accept="image/*" ref={coverInputRef} onChange={handleCoverChange} />
+                                {currentCoverPreview && <img src={currentCoverPreview} alt="Kapak" style={{width:'100%', height:'300px', objectFit:'cover', borderRadius:'8px', marginBottom:'15px', border:'2px solid #e94560'}} />}
+                                <span className="file-label" style={{fontSize:'16px'}}><i className="fas fa-camera"></i> Kapak Değiştir</span>
+                            </div>
+
+                            <label>Galeri Görselleri (Mevcut)</label>
+                            <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(140px, 1fr))', gap:'15px', marginBottom:'30px'}}>
+                                {currentGallery.map(img => (
+                                    <div key={img.imageID} style={{position:'relative'}}>
+                                        <img src={getImageSrc(img.image)} alt="Galeri" style={{width:'100%', height:'100px', objectFit:'cover', borderRadius:'6px', border:'1px solid #555'}} />
+                                        <button 
+                                            type="button"
+                                            onClick={() => handleImageDeleteClick(img.imageID)}
+                                            style={{position:'absolute', top:'-8px', right:'-8px', background:'#d32f2f', color:'white', border:'2px solid #222', borderRadius:'50%', width:'24px', height:'24px', cursor:'pointer', fontSize:'14px', display:'flex', alignItems:'center', justifyContent:'center', fontWeight:'bold'}}
+                                        >&times;</button>
+                                    </div>
+                                ))}
+                                {currentGallery.length === 0 && <span style={{color:'#666', fontSize:'14px', fontStyle:'italic'}}>Galeri boş (veya hepsi silinecek).</span>}
+                            </div>
+
+                            <label>Yeni Görsel Ekle</label>
+                            <div className="file-upload-box" style={{padding:'20px', backgroundColor:'#161625'}} onClick={() => galleryInputRef.current.click()}>
+                                <input type="file" accept="image/*" multiple ref={galleryInputRef} onChange={handleGalleryAdd} />
+                                <span className="file-label" style={{fontSize:'16px'}}>
+                                    <i className="fas fa-plus"></i> 
+                                    {newGalleryFiles.length > 0 ? `${newGalleryFiles.length} dosya seçildi` : "Yeni Resimler Ekle"}
+                                </span>
+                            </div>
+
+                            {newGalleryPreviews.length > 0 && (
+                                <div style={{marginTop:'15px', display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(140px, 1fr))', gap:'15px'}}>
+                                    {newGalleryPreviews.map((src, index) => (
+                                        <img key={index} src={src} alt={`Yeni-${index}`} style={{width:'100%', height:'100px', objectFit:'cover', borderRadius:'6px', border:'1px solid #e94560'}} />
+                                    ))}
+                                </div>
+                            )}
+
+                        </div>
+                    </div>
                     
-                    <label>Açıklama</label>
-                    <textarea rows="4" value={editForm.description} onChange={e => setEditForm({...editForm, description: e.target.value})} required></textarea>
-                    
-                    <label>Fiyat (₺) - Ücretsiz için 0 girin</label>
-                    <input type="number" min="0" step="0.01" value={editForm.price} onChange={e => setEditForm({...editForm, price: e.target.value})} required />
-                    
-                    <div className="modal-actions">
-                        <button type="button" onClick={() => setEditingItem(null)} className="btn-cancel">Vazgeç</button>
-                        <button type="submit" className="btn-save">Kaydet</button>
+                    <div className="modal-actions" style={{marginTop:'30px', borderTop:'1px solid #444', paddingTop:'20px'}}>
+                        <button type="button" onClick={() => setEditingItem(null)} className="btn-cancel" style={{padding:'12px 25px', fontSize:'16px'}}>Vazgeç</button>
+                        <button type="submit" className="btn-save" style={{padding:'12px 25px', fontSize:'16px'}}>Değişiklikleri Kaydet</button>
                     </div>
                 </form>
             </div>
         </div>
       )}
 
-      {/* 3. SİLME MODALI (KESİN ÇALIŞACAK ŞEKİLDE KONTROL EDİLDİ) */}
+      {imageToDelete && (
+        <div className="modal-overlay" style={{zIndex: 2000}} onClick={() => setImageToDelete(null)}>
+            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                <h3 style={{color:'#d32f2f'}}>Görseli Kaldır</h3>
+                <p style={{textAlign:'center', color:'#ccc'}}>
+                    Bu görseli listeden kaldırmak istediğinize emin misiniz? <br/>
+                    (Not: Kalıcı silme işlemi "Kaydet" butonuna basınca gerçekleşir.)
+                </p>
+                <div className="modal-actions">
+                    <button onClick={() => setImageToDelete(null)} className="btn-cancel">Vazgeç</button>
+                    <button onClick={confirmDeleteImage} className="btn-delete-confirm">Kaldır</button>
+                </div>
+            </div>
+        </div>
+      )}
+
       {deletingItem && (
         <div className="modal-overlay" onClick={() => setDeletingItem(null)}>
             <div className="modal-content" onClick={(e) => e.stopPropagation()}>
@@ -411,7 +542,6 @@ function Dashboard() {
         </div>
       )}
 
-      {/* 4. DETAY ve GRAFİK MODALI */}
       {showDetailModal && (
         <div className="modal-overlay" onClick={() => setShowDetailModal(false)}>
             <div className="modal-content large-modal" onClick={(e) => e.stopPropagation()}>
@@ -436,9 +566,7 @@ function Dashboard() {
                                 </BarChart>
                             </ResponsiveContainer>
                         </div>
-                    ) : (
-                        <p style={{textAlign:'center', color:'#666', padding:'20px'}}>Henüz grafik verisi oluşmadı.</p>
-                    )}
+                    ) : (<p style={{textAlign:'center', color:'#666', padding:'20px'}}>Henüz grafik verisi oluşmadı.</p>)}
                 </div>
 
                 <div style={{maxHeight:'300px', overflowY:'auto'}}>
@@ -451,12 +579,40 @@ function Dashboard() {
                                     <td>{new Date(detail.purchaseDate).toLocaleString('tr-TR')}</td>
                                     <td>{detail.price === 0 ? "Ücretsiz" : `₺${detail.price}`}</td>
                                 </tr>
-                            )) : (
-                                <tr><td colSpan="3" style={{textAlign:'center', color:'#aaa'}}>Kayıt bulunamadı.</td></tr>
-                            )}
+                            )) : (<tr><td colSpan="3" style={{textAlign:'center', color:'#aaa'}}>Kayıt bulunamadı.</td></tr>)}
                         </tbody>
                     </table>
                 </div>
+            </div>
+        </div>
+      )}
+
+      {/* --- YENİ EKLENEN: YORUM GÖRÜNTÜLEME MODALI --- */}
+      {showCommentsModal && (
+        <div className="modal-overlay" onClick={() => setShowCommentsModal(false)}>
+            <div className="modal-content large-modal" onClick={(e) => e.stopPropagation()} style={{maxHeight: '80vh', overflowY:'auto'}}>
+                <div style={{display:'flex', justifyContent:'space-between', borderBottom:'1px solid #444', marginBottom:'20px', paddingBottom:'10px'}}>
+                    <h3 style={{margin:0, color:'#f39c12'}}>{selectedItemNameForComments} - Yorumlar</h3>
+                    <button onClick={() => setShowCommentsModal(false)} style={{background:'none', border:'none', color:'white', fontSize:'24px', cursor:'pointer'}}>&times;</button>
+                </div>
+
+                {commentsLoading ? (
+                    <p style={{textAlign:'center', color:'#aaa'}}>Yorumlar yükleniyor...</p>
+                ) : selectedComments.length === 0 ? (
+                    <p style={{textAlign:'center', color:'#aaa', fontStyle:'italic', padding:'20px'}}>Henüz bu içeriğe yorum yapılmamış.</p>
+                ) : (
+                    <div className="dashboard-comments-list">
+                        {selectedComments.map((comment, index) => (
+                            <div key={index} className="dashboard-comment-item">
+                                <div className="dash-comment-header">
+                                    <span className="dash-comment-user">{comment.userName || "Anonim Kullanıcı"}</span>
+                                    <span className="dash-comment-date">{new Date(comment.commentDate).toLocaleString('tr-TR')}</span>
+                                </div>
+                                <p className="dash-comment-text">{comment.commentText}</p>
+                            </div>
+                        ))}
+                    </div>
+                )}
             </div>
         </div>
       )}

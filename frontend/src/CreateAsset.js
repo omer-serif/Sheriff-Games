@@ -7,6 +7,7 @@ function CreateAsset() {
   const navigate = useNavigate();
   const coverInputRef = useRef(null);
   const assetFileInputRef = useRef(null);
+  const galleryInputRef = useRef(null); // YENİ: Galeri input referansı
 
   useEffect(() => {
     const currentUser = JSON.parse(localStorage.getItem("currentUser"));
@@ -24,8 +25,14 @@ function CreateAsset() {
   const [availableTypes, setAvailableTypes] = useState([]);
   const [selectedTypes, setSelectedTypes] = useState([]);
 
+  // DOSYA VE ÖNİZLEME STATE'LERİ
   const [coverImage, setCoverImage] = useState(null);
+  const [coverPreview, setCoverPreview] = useState(null); // Kapak önizleme
+
   const [assetFile, setAssetFile] = useState(null);
+  
+  const [galleryFiles, setGalleryFiles] = useState([]); // Çoklu resimler
+  const [galleryPreviews, setGalleryPreviews] = useState([]); // Galeri önizleme
 
   useEffect(() => {
       fetch('http://localhost:3001/asset-types')
@@ -43,6 +50,25 @@ function CreateAsset() {
           setSelectedTypes(prev => [...prev, typeID]);
       } else {
           setSelectedTypes(prev => prev.filter(id => id !== typeID));
+      }
+  };
+
+  // --- KAPAK RESMİ SEÇİLİNCE ---
+  const handleCoverChange = (e) => {
+      const file = e.target.files[0];
+      if (file) {
+          setCoverImage(file);
+          setCoverPreview(URL.createObjectURL(file));
+      }
+  };
+
+  // --- GALERİ RESİMLERİ SEÇİLİNCE ---
+  const handleGalleryChange = (e) => {
+      const files = Array.from(e.target.files);
+      if (files.length > 0) {
+          setGalleryFiles(files);
+          const previewUrls = files.map(file => URL.createObjectURL(file));
+          setGalleryPreviews(previewUrls);
       }
   };
 
@@ -66,6 +92,11 @@ function CreateAsset() {
     if (coverImage) formData.append('coverImage', coverImage);
     if (assetFile) formData.append('assetFile', assetFile);
 
+    // YENİ: Galeri görsellerini ekle
+    for (let i = 0; i < galleryFiles.length; i++) {
+        formData.append('galleryImages', galleryFiles[i]);
+    }
+
     try {
         const response = await fetch('http://localhost:3001/api/add-asset', {
             method: 'POST',
@@ -74,7 +105,7 @@ function CreateAsset() {
         const result = await response.json();
 
         if (result.status === "Success") {
-            alert("Tebrikler! Asset başarıyla yayımlandı 📦");
+            alert("Tebrikler! Asset ve görseller başarıyla yayımlandı 📦");
             navigate('/assets'); 
         } else {
             alert("Hata: " + result.message);
@@ -104,19 +135,65 @@ function CreateAsset() {
                     </section>
 
                     <section className="form-section">
-                        <h3>2. Dosyalar</h3>
+                        <h3>2. Dosyalar ve Görseller</h3>
+                        
+                        {/* KAPAK GÖRSELİ */}
                         <div className="form-group">
                             <label>Kapak Görseli *</label>
                             <div className="file-upload-box" onClick={() => coverInputRef.current.click()}>
-                                <input type="file" accept="image/*" required ref={coverInputRef} onChange={(e) => setCoverImage(e.target.files[0])} />
-                                <span className="file-label"><i className="fas fa-image"></i> {coverImage ? coverImage.name : "Seç"}</span>
+                                <input 
+                                    type="file" 
+                                    accept="image/*" 
+                                    required 
+                                    ref={coverInputRef} 
+                                    onChange={handleCoverChange} 
+                                />
+                                <span className="file-label">
+                                    <i className="fas fa-image"></i> {coverImage ? "Kapak Resmi Değiştir" : "Kapak Resmi Seç"}
+                                </span>
                             </div>
+                            
+                            {/* KAPAK ÖNİZLEME */}
+                            {coverPreview && (
+                                <div className="preview-area">
+                                    <img src={coverPreview} alt="Kapak Önizleme" className="cover-preview-img" />
+                                </div>
+                            )}
                         </div>
+
+                        {/* YENİ: ASSET GALERİ GÖRSELLERİ */}
                         <div className="form-group">
-                            <label>Asset Dosyası *</label>
+                            <label>Asset Galeri Görselleri (Çoklu Seçim - Opsiyonel)</label>
+                            <div className="file-upload-box" onClick={() => galleryInputRef.current.click()}>
+                                <input 
+                                    type="file" 
+                                    accept="image/*" 
+                                    multiple // Çoklu seçim
+                                    ref={galleryInputRef} 
+                                    onChange={handleGalleryChange} 
+                                />
+                                <span className="file-label">
+                                    <i className="fas fa-images"></i> 
+                                    {galleryFiles.length > 0 ? `${galleryFiles.length} adet görsel seçildi` : "Galeri Görselleri Seç"}
+                                </span>
+                            </div>
+
+                            {/* GALERİ ÖNİZLEME */}
+                            {galleryPreviews.length > 0 && (
+                                <div className="preview-area gallery-grid-preview">
+                                    {galleryPreviews.map((src, index) => (
+                                        <img key={index} src={src} alt={`Galeri ${index}`} className="gallery-preview-img" />
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* ASSET DOSYASI */}
+                        <div className="form-group">
+                            <label>Asset Dosyası (.zip, .unitypackage vb.) *</label>
                             <div className="file-upload-box" onClick={() => assetFileInputRef.current.click()}>
                                 <input type="file" required ref={assetFileInputRef} onChange={(e) => setAssetFile(e.target.files[0])} />
-                                <span className="file-label"><i className="fas fa-box-open"></i> {assetFile ? assetFile.name : "Yükle"}</span>
+                                <span className="file-label"><i className="fas fa-box-open"></i> {assetFile ? assetFile.name : "Dosya Yükle"}</span>
                             </div>
                         </div>
                     </section>
@@ -135,7 +212,6 @@ function CreateAsset() {
                                             onChange={handleTypeChange}
                                             style={{width: '18px', height: '18px', marginRight: '10px'}}
                                         />
-                                        {/* İŞTE BURASI DÜZELTİLDİ: type.type */}
                                         {type.type} 
                                     </label>
                                 ))}
