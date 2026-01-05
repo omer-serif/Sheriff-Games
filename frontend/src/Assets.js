@@ -57,7 +57,7 @@ function Assets() {
 
   useEffect(() => {
     fetchAssets(true); 
-
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleApplyFilter = () => fetchAssets(false);
@@ -81,6 +81,48 @@ function Assets() {
   const currentAssets = safeList.slice(indexOfFirstItem, indexOfLastItem);
   const totalPages = Math.ceil(safeList.length / itemsPerPage);
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
+  // --- AKILLI SAYFALAMA MANTIĞI ---
+  const getPaginationGroup = () => {
+    const pageNumbers = [];
+    const maxVisibleButtons = 5; // Ortada kaç tane buton görünsün
+
+    // Eğer toplam sayfa sayısı azsa hepsini göster
+    if (totalPages <= maxVisibleButtons + 2) {
+        for (let i = 1; i <= totalPages; i++) {
+            pageNumbers.push(i);
+        }
+        return pageNumbers;
+    }
+
+    // Başlangıç ve Bitiş sayfalarını her zaman ekle
+    // Aktif sayfanın etrafındaki aralığı belirle
+    let startPage = Math.max(2, currentPage - 2);
+    let endPage = Math.min(totalPages - 1, currentPage + 2);
+
+    // İlk sayfa
+    pageNumbers.push(1);
+
+    // Araya "..." lazım mı? (Baştaki boşluk)
+    if (startPage > 2) {
+        pageNumbers.push("...");
+    }
+
+    // Orta kısım
+    for (let i = startPage; i <= endPage; i++) {
+        pageNumbers.push(i);
+    }
+
+    // Araya "..." lazım mı? (Sondaki boşluk)
+    if (endPage < totalPages - 1) {
+        pageNumbers.push("...");
+    }
+
+    // Son sayfa
+    pageNumbers.push(totalPages);
+
+    return pageNumbers;
+  };
 
   return (
     <div className={`assets-page ${sidebarAcik ? 'sidebar-open' : ''}`}>
@@ -121,7 +163,6 @@ function Assets() {
                 {loading ? <p style={{color:'white', textAlign:'center'}}>Yükleniyor...</p> : (
                     <>
                         {safeList.length === 0 ? (
-                           
                             <div style={{textAlign:'center', padding:'50px', border:'1px dashed #444', borderRadius:'10px', marginTop:'20px'}}>
                                 <i className="fas fa-box-open" style={{fontSize:'40px', color:'#e94560', marginBottom:'15px'}}></i>
                                 <h3 style={{color:'#fff'}}>Sonuç Bulunamadı</h3>
@@ -146,11 +187,41 @@ function Assets() {
                         )}
                     </>
                 )}
+                
+                {/* YENİLENMİŞ SAYFALAMA ALANI */}
                 {totalPages > 1 && (
                     <div className="pagination-container">
-                        {Array.from({ length: totalPages }, (_, i) => (
-                            <button key={i + 1} onClick={() => paginate(i + 1)} className={`page-btn ${currentPage === i + 1 ? 'active' : ''}`}>{i + 1}</button>
+                        {/* Önceki Sayfa Butonu */}
+                        <button 
+                            onClick={() => paginate(Math.max(1, currentPage - 1))} 
+                            className="page-btn"
+                            disabled={currentPage === 1}
+                            style={{opacity: currentPage === 1 ? 0.5 : 1, cursor: currentPage === 1 ? 'not-allowed' : 'pointer'}}
+                        >
+                            &#10094;
+                        </button>
+
+                        {/* Akıllı Sayfa Numaraları */}
+                        {getPaginationGroup().map((item, index) => (
+                            <button
+                                key={index}
+                                onClick={() => typeof item === 'number' ? paginate(item) : null}
+                                className={`page-btn ${currentPage === item ? 'active' : ''} ${item === '...' ? 'dots' : ''}`}
+                                disabled={item === '...'}
+                            >
+                                {item}
+                            </button>
                         ))}
+
+                        {/* Sonraki Sayfa Butonu */}
+                        <button 
+                            onClick={() => paginate(Math.min(totalPages, currentPage + 1))} 
+                            className="page-btn"
+                            disabled={currentPage === totalPages}
+                            style={{opacity: currentPage === totalPages ? 0.5 : 1, cursor: currentPage === totalPages ? 'not-allowed' : 'pointer'}}
+                        >
+                            &#10095;
+                        </button>
                     </div>
                 )}
             </section>

@@ -714,3 +714,59 @@ body.sidebar-open .content { filter: brightness(0.5); pointer-events: none; }
     color: #ddd;
     line-height: 1.5;
 }
+/* --- PAGINATION (SAYFALAMA) STİLLERİ --- */
+.pagination-container {
+    display: flex;
+    justify-content: center; /* Butonları ortala */
+    align-items: center;
+    gap: 8px; /* Butonlar arası boşluk */
+    margin-top: 40px; /* Üstten boşluk */
+    margin-bottom: 20px; /* Alttan boşluk */
+    flex-wrap: wrap; /* Çok sayfa varsa alt satıra geçsin */
+}
+
+.page-btn {
+    background-color: #161625; /* Koyu arka plan */
+    color: #e0e0e0; /* Açık gri yazı */
+    border: 1px solid #333; /* İnce çerçeve */
+    padding: 8px 14px; /* İç boşluk */
+    border-radius: 6px; /* Köşeleri yuvarla */
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease; /* Yumuşak geçiş efekti */
+    min-width: 36px; /* Kareye yakın görünüm için minimum genişlik */
+}
+
+.page-btn:hover {
+    background-color: #333; /* Hover rengi */
+    border-color: #555;
+    color: #fff;
+    transform: translateY(-2px); /* Hafif yukarı kalkma efekti */
+}
+
+.page-btn.active {
+    background-color: #e94560; /* Aktif sayfa için ana renk (Pembe/Kırmızı) */
+    color: white;
+    border-color: #e94560;
+    box-shadow: 0 4px 10px rgba(233, 69, 96, 0.4); /* Hafif gölge */
+}
+
+/* Küçük ekranlar için düzenleme */
+@media (max-width: 600px) {
+    .page-btn {
+        padding: 6px 10px;
+        font-size: 12px;
+    }
+}
+
+.page-btn.dots {
+    background-color: transparent;
+    border: none;
+    color: #888;
+    cursor: default;
+}
+.page-btn.dots:hover {
+    background-color: transparent;
+    transform: none;
+}

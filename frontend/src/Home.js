@@ -85,6 +85,40 @@ function Home() {
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
   const toggleSidebar = () => setSidebarAcik(!sidebarAcik);
 
+  // --- AKILLI SAYFALAMA MANTIĞI ---
+  const getPaginationGroup = () => {
+    const pageNumbers = [];
+    const maxVisibleButtons = 5; // Ortada kaç tane buton görünsün
+
+    if (totalPages <= maxVisibleButtons + 2) {
+        for (let i = 1; i <= totalPages; i++) {
+            pageNumbers.push(i);
+        }
+        return pageNumbers;
+    }
+
+    let startPage = Math.max(2, currentPage - 2);
+    let endPage = Math.min(totalPages - 1, currentPage + 2);
+
+    pageNumbers.push(1);
+
+    if (startPage > 2) {
+        pageNumbers.push("...");
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+        pageNumbers.push(i);
+    }
+
+    if (endPage < totalPages - 1) {
+        pageNumbers.push("...");
+    }
+
+    pageNumbers.push(totalPages);
+
+    return pageNumbers;
+  };
+
   return (
     <div className={`home-page ${sidebarAcik ? 'sidebar-open' : ''}`}>
       <Navbar />
@@ -149,11 +183,37 @@ function Home() {
                 )}
               </>
           )}
+          
           {totalPages > 1 && (
             <div className="pagination-container">
-                {Array.from({ length: totalPages }, (_, i) => (
-                    <button key={i + 1} onClick={() => paginate(i + 1)} className={`page-btn ${currentPage === i + 1 ? 'active' : ''}`}>{i + 1}</button>
+                <button 
+                    onClick={() => paginate(Math.max(1, currentPage - 1))} 
+                    className="page-btn"
+                    disabled={currentPage === 1}
+                    style={{opacity: currentPage === 1 ? 0.5 : 1, cursor: currentPage === 1 ? 'not-allowed' : 'pointer'}}
+                >
+                    &#10094;
+                </button>
+
+                {getPaginationGroup().map((item, index) => (
+                    <button
+                        key={index}
+                        onClick={() => typeof item === 'number' ? paginate(item) : null}
+                        className={`page-btn ${currentPage === item ? 'active' : ''} ${item === '...' ? 'dots' : ''}`}
+                        disabled={item === '...'}
+                    >
+                        {item}
+                    </button>
                 ))}
+
+                <button 
+                    onClick={() => paginate(Math.min(totalPages, currentPage + 1))} 
+                    className="page-btn"
+                    disabled={currentPage === totalPages}
+                    style={{opacity: currentPage === totalPages ? 0.5 : 1, cursor: currentPage === totalPages ? 'not-allowed' : 'pointer'}}
+                >
+                    &#10095;
+                </button>
             </div>
           )}
         </section>
