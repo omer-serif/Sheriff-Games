@@ -7,7 +7,7 @@ function CreateAsset() {
   const navigate = useNavigate();
   const coverInputRef = useRef(null);
   const assetFileInputRef = useRef(null);
-  const galleryInputRef = useRef(null); // YENİ: Galeri input referansı
+  const galleryInputRef = useRef(null); 
 
   useEffect(() => {
     const currentUser = JSON.parse(localStorage.getItem("currentUser"));
@@ -27,12 +27,12 @@ function CreateAsset() {
 
   // DOSYA VE ÖNİZLEME STATE'LERİ
   const [coverImage, setCoverImage] = useState(null);
-  const [coverPreview, setCoverPreview] = useState(null); // Kapak önizleme
+  const [coverPreview, setCoverPreview] = useState(null); 
 
   const [assetFile, setAssetFile] = useState(null);
   
-  const [galleryFiles, setGalleryFiles] = useState([]); // Çoklu resimler
-  const [galleryPreviews, setGalleryPreviews] = useState([]); // Galeri önizleme
+  const [galleryFiles, setGalleryFiles] = useState([]); 
+  const [galleryPreviews, setGalleryPreviews] = useState([]); 
 
   useEffect(() => {
       fetch('http://localhost:3001/asset-types')
@@ -92,7 +92,6 @@ function CreateAsset() {
     if (coverImage) formData.append('coverImage', coverImage);
     if (assetFile) formData.append('assetFile', assetFile);
 
-    // YENİ: Galeri görsellerini ekle
     for (let i = 0; i < galleryFiles.length; i++) {
         formData.append('galleryImages', galleryFiles[i]);
     }

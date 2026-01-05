@@ -106,7 +106,7 @@ function AssetPage() {
                 
                 <header className="game-header">
                     <h1>{asset.assetName}</h1>
-                    {/* BURADA TAGLINE YOK - KALDIRILDI */}
+               
                 </header>
 
                 <section className="game-gallery">
@@ -127,7 +127,7 @@ function AssetPage() {
                     </div>
                 </section>
 
-                {/* Thumbnail Row */}
+            
                 {allImages.length > 1 && (
                     <div className="thumbnail-row">
                         {allImages.map((img, index) => (
@@ -164,14 +164,14 @@ function AssetPage() {
                     <aside className="game-purchase-sidebar">
                         <div className="purchase-box">
                             <div className="price-tag-large">
-                                {/* DÜZELTME: GamePage ile aynı stil */}
+            
                                 <span className="price-lbl">FİYAT</span>
                                 <span className="price-val">
                                     {(!asset.assetPrice || asset.assetPrice === 0) ? "ÜCRETSİZ" : `₺${asset.assetPrice}`}
                                 </span>
                             </div>
                             
-                            {/* DÜZELTME: Buton rengi ve stili */}
+
                             <button className="btn btn-primary buy-btn" onClick={handleBuy}>
                                 {(!asset.assetPrice || asset.assetPrice === 0) ? <><i className="fas fa-download"></i> İNDİR</> : <><i className="fas fa-shopping-cart"></i> SATIN AL</>}
                             </button>
@@ -181,7 +181,6 @@ function AssetPage() {
                                     <span className="summary-label">Yayıncı:</span>
                                     <span className="summary-value author">{asset.publisherName || "Anonim"}</span>
                                 </div>
-                                {/* DÜZELTME: Firma satırı eklendi */}
                                 <div className="summary-row">
                                     <span className="summary-label">Firma:</span>
                                     <span className="summary-value firm">Sheriff Games</span>

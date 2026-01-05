@@ -57,7 +57,7 @@ function Assets() {
 
   useEffect(() => {
     fetchAssets(true); 
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, []);
 
   const handleApplyFilter = () => fetchAssets(false);
@@ -85,9 +85,8 @@ function Assets() {
   // --- AKILLI SAYFALAMA MANTIĞI ---
   const getPaginationGroup = () => {
     const pageNumbers = [];
-    const maxVisibleButtons = 5; // Ortada kaç tane buton görünsün
+    const maxVisibleButtons = 5; 
 
-    // Eğer toplam sayfa sayısı azsa hepsini göster
     if (totalPages <= maxVisibleButtons + 2) {
         for (let i = 1; i <= totalPages; i++) {
             pageNumbers.push(i);
@@ -95,30 +94,28 @@ function Assets() {
         return pageNumbers;
     }
 
-    // Başlangıç ve Bitiş sayfalarını her zaman ekle
-    // Aktif sayfanın etrafındaki aralığı belirle
     let startPage = Math.max(2, currentPage - 2);
     let endPage = Math.min(totalPages - 1, currentPage + 2);
 
     // İlk sayfa
     pageNumbers.push(1);
 
-    // Araya "..." lazım mı? (Baştaki boşluk)
+
     if (startPage > 2) {
         pageNumbers.push("...");
     }
 
-    // Orta kısım
+    
     for (let i = startPage; i <= endPage; i++) {
         pageNumbers.push(i);
     }
 
-    // Araya "..." lazım mı? (Sondaki boşluk)
+   
     if (endPage < totalPages - 1) {
         pageNumbers.push("...");
     }
 
-    // Son sayfa
+    
     pageNumbers.push(totalPages);
 
     return pageNumbers;
@@ -187,11 +184,10 @@ function Assets() {
                         )}
                     </>
                 )}
-                
-                {/* YENİLENMİŞ SAYFALAMA ALANI */}
+          
                 {totalPages > 1 && (
                     <div className="pagination-container">
-                        {/* Önceki Sayfa Butonu */}
+                  
                         <button 
                             onClick={() => paginate(Math.max(1, currentPage - 1))} 
                             className="page-btn"
@@ -201,7 +197,7 @@ function Assets() {
                             &#10094;
                         </button>
 
-                        {/* Akıllı Sayfa Numaraları */}
+                    
                         {getPaginationGroup().map((item, index) => (
                             <button
                                 key={index}
@@ -213,7 +209,7 @@ function Assets() {
                             </button>
                         ))}
 
-                        {/* Sonraki Sayfa Butonu */}
+                       
                         <button 
                             onClick={() => paginate(Math.min(totalPages, currentPage + 1))} 
                             className="page-btn"

@@ -28,12 +28,12 @@ function CreateGame() {
 
   // DOSYA VE ÖNİZLEME STATE'LERİ
   const [coverImage, setCoverImage] = useState(null);
-  const [coverPreview, setCoverPreview] = useState(null); // Kapak önizleme URL'si
+  const [coverPreview, setCoverPreview] = useState(null); 
 
   const [gameFile, setGameFile] = useState(null);
   
   const [galleryFiles, setGalleryFiles] = useState([]); 
-  const [galleryPreviews, setGalleryPreviews] = useState([]); // Galeri önizleme URL'leri
+  const [galleryPreviews, setGalleryPreviews] = useState([]); 
 
   useEffect(() => {
       fetch('http://localhost:3001/game-types')
@@ -56,7 +56,7 @@ function CreateGame() {
       const file = e.target.files[0];
       if (file) {
           setCoverImage(file);
-          setCoverPreview(URL.createObjectURL(file)); // Önizleme URL'si oluştur
+          setCoverPreview(URL.createObjectURL(file)); 
       }
   };
 
@@ -65,7 +65,6 @@ function CreateGame() {
       const files = Array.from(e.target.files);
       if (files.length > 0) {
           setGalleryFiles(files);
-          // Her dosya için bir önizleme URL'si oluştur
           const previewUrls = files.map(file => URL.createObjectURL(file));
           setGalleryPreviews(previewUrls);
       }
@@ -148,7 +147,7 @@ function CreateGame() {
                                     accept="image/*" 
                                     required 
                                     ref={coverInputRef} 
-                                    onChange={handleCoverChange} // Fonksiyon değişti
+                                    onChange={handleCoverChange} 
                                 />
                                 <span className="file-label">
                                     <i className="fas fa-image"></i> {coverImage ? "Kapak Resmi Değiştir" : "Kapak Resmi Seç"}
@@ -172,7 +171,7 @@ function CreateGame() {
                                     accept="image/*" 
                                     multiple 
                                     ref={galleryInputRef} 
-                                    onChange={handleGalleryChange} // Fonksiyon değişti
+                                    onChange={handleGalleryChange} 
                                 />
                                 <span className="file-label">
                                     <i className="fas fa-images"></i> 
