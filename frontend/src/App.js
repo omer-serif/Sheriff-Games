@@ -12,6 +12,7 @@ import CreateAsset from './CreateAsset';
 import Assets from './Assets';
 import GamePage from './GamePage';
 import AssetPage from './AssetPage';
+import Library from './Library';
 
 function App() {
   return (
@@ -26,7 +27,9 @@ function App() {
           <Route path="/create-asset" element={<CreateAsset />} />
           <Route path="/game/:id" element={<GamePage />} />
           <Route path="/asset/:id" element={<AssetPage />} />
-          <Route path='/assets'element={<Assets/>}/>
+          <Route path='/assets' element={<Assets/>}/>
+          <Route path="/library" element={<Library />} />
+          
         </Routes>
       </div>
     </Router>

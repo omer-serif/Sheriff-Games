@@ -56,17 +56,17 @@ const deleteFileFromStorage = (filename) => {
 app.get('/', (req, res) => res.json("Backend Çalışıyor!"));
 
 app.get('/game-types', (req, res) => {
-    const sql = "SELECT * FROM gametypes"; 
+    const sql = "SELECT * FROM gametypes";
     db.query(sql, (err, data) => {
-        if(err) return res.status(500).json(err);
+        if (err) return res.status(500).json(err);
         return res.json(data);
     });
 });
 
 app.get('/asset-types', (req, res) => {
-    const sql = "SELECT * FROM assettypes"; 
+    const sql = "SELECT * FROM assettypes";
     db.query(sql, (err, data) => {
-        if(err) return res.status(500).json(err);
+        if (err) return res.status(500).json(err);
         return res.json(data);
     });
 });
@@ -74,9 +74,11 @@ app.get('/asset-types', (req, res) => {
 app.get('/games', (req, res) => {
     const { search, category, priceType } = req.query;
     let sql = `
-        SELECT G.gamesID, G.gameName, G.gamePrice, G.gameDescription, G.gameImage, G.gameFile,
+        SELECT G.gamesID, G.gameName, G.gamePrice, G.gameDescription, G.gameImage, G.gameFile, 
+        IF(TG.gameID IS NOT NULL, 1, 0) as isTestGame,
         GROUP_CONCAT(GT.gameType SEPARATOR ', ') as categoryNames 
         FROM Games G
+        LEFT JOIN TestGames TG ON G.gamesID = TG.gameID
         LEFT JOIN gametypes_game GTG ON G.gamesID = GTG.game
         LEFT JOIN gametypes GT ON GTG.gameType = GT.gameTypeID
         WHERE 1=1 
@@ -91,7 +93,7 @@ app.get('/games', (req, res) => {
         sql += ` AND G.gamesID IN (SELECT game FROM gametypes_game WHERE gameType = (SELECT gameTypeID FROM gametypes WHERE gameType = ?))`;
         params.push(category);
     }
-    sql += ` GROUP BY G.gamesID, G.gameName, G.gamePrice, G.gameDescription, G.gameImage, G.gameFile ORDER BY G.gamesID DESC`;
+    sql += ` GROUP BY G.gamesID, G.gameName, G.gamePrice, G.gameDescription, G.gameImage, G.gameFile, TG.gameID ORDER BY G.gamesID DESC`;
     db.query(sql, params, (err, data) => {
         if (err) return res.status(500).json({ error: err.sqlMessage });
         return res.json(data);
@@ -127,23 +129,25 @@ app.get('/assets', (req, res) => {
 
 app.get('/games/:id', (req, res) => {
     const sqlGame = `
-        SELECT G.gamesID, G.gameName, G.gamePrice, G.gameDescription, G.gameImage, G.gameFile, U.userName as publisherName, 
+        SELECT G.gamesID, G.gameName, G.gamePrice, G.gameDescription, G.gameImage, G.gameFile, 
+        IF(TG.gameID IS NOT NULL, 1, 0) as isTestGame, U.userName as publisherName, 
         GROUP_CONCAT(GT.gameType SEPARATOR ', ') as categoryNames 
         FROM games G
+        LEFT JOIN TestGames TG ON G.gamesID = TG.gameID
         LEFT JOIN usergamedevelops UGD ON G.gamesID = UGD.game
         LEFT JOIN user U ON UGD.user = U.userID
         LEFT JOIN gametypes_game GTG ON G.gamesID = GTG.game
         LEFT JOIN gametypes GT ON GTG.gameType = GT.gameTypeID
         WHERE G.gamesID = ?
-        GROUP BY G.gamesID, G.gameName, G.gamePrice, G.gameDescription, G.gameImage, G.gameFile, U.userName
+        GROUP BY G.gamesID, G.gameName, G.gamePrice, G.gameDescription, G.gameImage, G.gameFile, TG.gameID, U.userName
     `;
     const sqlImages = `SELECT image FROM GameImages WHERE gameID = ?`;
     db.query(sqlGame, [req.params.id], (err, data) => {
-        if(err) return res.status(500).json(err);
+        if (err) return res.status(500).json(err);
         if (data.length === 0) return res.status(404).json({ message: "Oyun bulunamadı" });
         const gameData = data[0];
         db.query(sqlImages, [req.params.id], (err2, imagesData) => {
-            if(err2) { gameData.galleryImages = []; return res.json(gameData); }
+            if (err2) { gameData.galleryImages = []; return res.json(gameData); }
             gameData.galleryImages = imagesData.map(img => img.image);
             return res.json(gameData);
         });
@@ -164,37 +168,36 @@ app.get('/assets/:id', (req, res) => {
     `;
     const sqlImages = `SELECT image FROM AssetImages WHERE assetID = ?`;
     db.query(sql, [req.params.id], (err, data) => {
-        if(err) return res.status(500).json(err);
+        if (err) return res.status(500).json(err);
         if (data.length === 0) return res.status(404).json({ message: "Asset bulunamadı" });
         const assetData = data[0];
         db.query(sqlImages, [req.params.id], (err2, imagesData) => {
-            if(err2) { assetData.galleryImages = []; return res.json(assetData); }
+            if (err2) { assetData.galleryImages = []; return res.json(assetData); }
             assetData.galleryImages = imagesData.map(img => img.image);
             return res.json(assetData);
         });
     });
 });
 
-// EKLEME İŞLEMLERİ
 app.post('/api/add-game', upload.fields([{ name: 'coverImage', maxCount: 1 }, { name: 'gameFile', maxCount: 1 }, { name: 'galleryImages', maxCount: 10 }]), (req, res) => {
-    const { gameName, gameDescription, gamePrice, gameTypes, userID } = req.body; 
+    const { gameName, gameDescription, gamePrice, gameTypes, userID } = req.body;
     const coverImage = req.files['coverImage'] ? req.files['coverImage'][0].filename : null;
     const gameFile = req.files['gameFile'] ? req.files['gameFile'][0].filename : null;
-    const galleryImages = req.files['galleryImages'] || []; 
-    let typeIDs = []; try { typeIDs = JSON.parse(gameTypes); } catch (e) {}
+    const galleryImages = req.files['galleryImages'] || [];
+    let typeIDs = []; try { typeIDs = JSON.parse(gameTypes); } catch (e) { }
 
     db.beginTransaction((err) => {
         if (err) return res.status(500).json(err);
         const sqlGame = "INSERT INTO Games (`gameName`, `gameDescription`, `gamePrice`, `gameImage`, `gameFile`) VALUES (?)";
         db.query(sqlGame, [[gameName, gameDescription, gamePrice, coverImage, gameFile]], (err, result) => {
-            if (err) return db.rollback(() => res.status(500).json({error: err.message}));
+            if (err) return db.rollback(() => res.status(500).json({ error: err.message }));
             const newID = result.insertId;
             const sqlRel = "INSERT INTO UserGameDevelops (`user`, `game`) VALUES (?, ?)";
             db.query(sqlRel, [userID, newID], (err) => {
-                if (err) return db.rollback(() => res.status(500).json({error: err.message}));
+                if (err) return db.rollback(() => res.status(500).json({ error: err.message }));
                 const addCategories = (callback) => {
                     if (typeIDs.length > 0) {
-                        const typeValues = typeIDs.map(id => [newID, id]); 
+                        const typeValues = typeIDs.map(id => [newID, id]);
                         db.query("INSERT INTO gametypes_game (`game`, `gameType`) VALUES ?", [typeValues], callback);
                     } else callback(null);
                 };
@@ -202,13 +205,13 @@ app.post('/api/add-game', upload.fields([{ name: 'coverImage', maxCount: 1 }, { 
                     if (galleryImages.length > 0) {
                         const imageValues = galleryImages.map(file => [newID, file.filename]);
                         db.query("INSERT INTO GameImages (`gameID`, `image`) VALUES ?", [imageValues], callback);
-                    } else callback(null); 
+                    } else callback(null);
                 };
                 addCategories((err) => {
-                    if (err) return db.rollback(() => res.status(500).json({error: err.message}));
+                    if (err) return db.rollback(() => res.status(500).json({ error: err.message }));
                     addGalleryImages((err) => {
-                        if (err) return db.rollback(() => res.status(500).json({error: err.message}));
-                        db.commit((err) => { if(err) return db.rollback(() => res.status(500).json(err)); res.json({ status: "Success", message: "Oyun ve görseller başarıyla yüklendi!" }); });
+                        if (err) return db.rollback(() => res.status(500).json({ error: err.message }));
+                        db.commit((err) => { if (err) return db.rollback(() => res.status(500).json(err)); res.json({ status: "Success", message: "Oyun ve görseller başarıyla yüklendi!" }); });
                     });
                 });
             });
@@ -220,18 +223,18 @@ app.post('/api/add-asset', upload.fields([{ name: 'coverImage', maxCount: 1 }, {
     const { assetName, assetDescription, assetPrice, assetTypes, userID } = req.body;
     const assetImage = req.files['coverImage'] ? req.files['coverImage'][0].filename : null;
     const assetFile = req.files['assetFile'] ? req.files['assetFile'][0].filename : null;
-    const galleryImages = req.files['galleryImages'] || []; 
-    let typeIDs = []; try { typeIDs = JSON.parse(assetTypes); } catch (e) {}
+    const galleryImages = req.files['galleryImages'] || [];
+    let typeIDs = []; try { typeIDs = JSON.parse(assetTypes); } catch (e) { }
 
     db.beginTransaction((err) => {
         if (err) return res.status(500).json(err);
         const sql = "INSERT INTO Assets (`assetName`, `assetDescription`, `assetPrice`, `assetImage`, `assetFile`) VALUES (?)";
         db.query(sql, [[assetName, assetDescription, assetPrice, assetImage, assetFile]], (err, result) => {
-            if (err) return db.rollback(() => res.status(500).json({error: err.message}));
+            if (err) return db.rollback(() => res.status(500).json({ error: err.message }));
             const newID = result.insertId;
             const sqlRel = "INSERT INTO UserAssetDevelops (`user`, `asset`) VALUES (?, ?)";
             db.query(sqlRel, [userID, newID], (err) => {
-                if (err) return db.rollback(() => res.status(500).json({error: err.message}));
+                if (err) return db.rollback(() => res.status(500).json({ error: err.message }));
                 const addCategories = (callback) => {
                     if (typeIDs.length > 0) {
                         const typeValues = typeIDs.map(id => [newID, id]);
@@ -245,10 +248,10 @@ app.post('/api/add-asset', upload.fields([{ name: 'coverImage', maxCount: 1 }, {
                     } else callback(null);
                 };
                 addCategories((err) => {
-                    if (err) return db.rollback(() => res.status(500).json({error: err.message}));
+                    if (err) return db.rollback(() => res.status(500).json({ error: err.message }));
                     addGalleryImages((err) => {
-                        if (err) return db.rollback(() => res.status(500).json({error: err.message}));
-                        db.commit((err) => { if(err) return db.rollback(() => res.status(500).json(err)); res.json({ status: "Success", message: "Asset ve görseller başarıyla yüklendi!" }); });
+                        if (err) return db.rollback(() => res.status(500).json({ error: err.message }));
+                        db.commit((err) => { if (err) return db.rollback(() => res.status(500).json(err)); res.json({ status: "Success", message: "Asset ve görseller başarıyla yüklendi!" }); });
                     });
                 });
             });
@@ -256,12 +259,11 @@ app.post('/api/add-asset', upload.fields([{ name: 'coverImage', maxCount: 1 }, {
     });
 });
 
-// AUTH
 app.post('/login', (req, res) => {
     const { email, password } = req.body;
     db.query("SELECT * FROM User WHERE (userMail = ? OR userName = ?) AND userPassword = ?", [email, email, password], (err, data) => {
-        if(err) return res.status(500).json("Hata");
-        if(data.length > 0) return res.json({ status: "Success", user: data[0] });
+        if (err) return res.status(500).json("Hata");
+        if (data.length > 0) return res.json({ status: "Success", user: data[0] });
         return res.status(401).json({ status: "Error", message: "Hatalı bilgi" });
     });
 });
@@ -269,26 +271,32 @@ app.post('/login', (req, res) => {
 app.post('/register', (req, res) => {
     const { username, email, password } = req.body;
     db.query("INSERT INTO User (`userName`, `userMail`, `userPassword`) VALUES (?)", [[username, email, password]], (err) => {
-        if(err) return res.status(500).json({ status: "Error" });
+        if (err) return res.status(500).json({ status: "Error" });
         return res.json({ status: "Success" });
     });
 });
 
-// DASHBOARD
 app.get('/api/my-games/:userID', (req, res) => {
-    const sql = `SELECT Games.* FROM Games JOIN UserGameDevelops ON Games.gamesID = UserGameDevelops.game WHERE UserGameDevelops.user = ?`;
+    const sql = `
+        SELECT Games.*, IF(TestGames.gameID IS NOT NULL, 1, 0) AS isTestGame 
+        FROM Games 
+        JOIN UserGameDevelops ON Games.gamesID = UserGameDevelops.game 
+        LEFT JOIN TestGames ON Games.gamesID = TestGames.gameID 
+        WHERE UserGameDevelops.user = ?`;
     db.query(sql, [req.params.userID], (err, data) => {
-        if(err) return res.status(500).json(err);
+        if (err) return res.status(500).json(err);
         return res.json(data);
     });
 });
+
 app.get('/api/my-assets/:userID', (req, res) => {
     const sql = `SELECT Assets.* FROM Assets JOIN UserAssetDevelops ON Assets.assetID = UserAssetDevelops.asset WHERE UserAssetDevelops.user = ?`;
     db.query(sql, [req.params.userID], (err, data) => {
-        if(err) return res.status(500).json(err);
+        if (err) return res.status(500).json(err);
         return res.json(data);
     });
 });
+
 app.get('/api/my-sales/:userID', (req, res) => {
     const sellerID = req.params.userID;
     const sql = `
@@ -296,16 +304,11 @@ app.get('/api/my-sales/:userID', (req, res) => {
         UNION ALL
         SELECT 'Asset' as itemType, A.assetName as itemName, A.assetPrice as price, U.userName as buyerName, UBA.purchaseDate as saleDate FROM UserByAsset UBA JOIN Assets A ON UBA.asset = A.assetID JOIN UserAssetDevelops UAD ON A.assetID = UAD.asset JOIN User U ON UBA.user = U.userID WHERE UAD.user = ? ORDER BY saleDate DESC`;
     db.query(sql, [sellerID, sellerID], (err, data) => {
-        if(err) return res.status(500).json(err);
+        if (err) return res.status(500).json(err);
         return res.json(data);
     });
 });
 
-// ==========================================
-// DÜZENLEME VE RESİM YÖNETİMİ İŞLEMLERİ (GÜNCELLENDİ)
-// ==========================================
-
-// 1. DÜZENLEME İÇİN GALERİ RESİMLERİNİ ÇEK
 app.get('/api/get-edit-details/:type/:id', (req, res) => {
     const { type, id } = req.params;
     let sqlImages = type === 'Game' ? "SELECT imageID, image FROM GameImages WHERE gameID = ?" : "SELECT imageID, image FROM AssetImages WHERE assetID = ?";
@@ -315,7 +318,6 @@ app.get('/api/get-edit-details/:type/:id', (req, res) => {
     });
 });
 
-// 2. TEKİL GALERİ RESMİ SİLME
 app.delete('/api/delete-gallery-image', (req, res) => {
     const { type, imageID, imageName } = req.body;
     deleteFileFromStorage(imageName);
@@ -326,18 +328,15 @@ app.delete('/api/delete-gallery-image', (req, res) => {
     });
 });
 
-// 3. GELİŞMİŞ GÜNCELLEME (Text + Kapak + Yeni Galeri + SİLİNECEK GALERİ)
 app.put('/api/update-item', upload.fields([
-    { name: 'coverImage', maxCount: 1 }, 
+    { name: 'coverImage', maxCount: 1 },
     { name: 'newGalleryImages', maxCount: 10 }
 ]), (req, res) => {
-    const { type, id, name, description, price, deletedImageIDs } = req.body;
-    
-    // Yeni dosyalar
+    const { type, id, name, description, price, deletedImageIDs, isTestGame } = req.body;
+
     const newCover = req.files['coverImage'] ? req.files['coverImage'][0].filename : null;
     const newGallery = req.files['newGalleryImages'] || [];
 
-    // Silinecek ID'leri parse et (Frontend'den JSON string olarak gelir)
     let idsToDelete = [];
     try {
         idsToDelete = JSON.parse(deletedImageIDs || "[]");
@@ -348,102 +347,159 @@ app.put('/api/update-item', upload.fields([
     db.beginTransaction((err) => {
         if (err) return res.status(500).json(err);
 
-        // 1. TEMEL BİLGİLERİ GÜNCELLE
         let sqlUpdate = "";
-        let params = [name, description, price];
+        let params = [];
+
+        // GÜVENLİK: Tanımsız (undefined) verileri düzeltip SQL hatasını engelliyoruz
+        const safeName = name || "";
+        const safeDesc = description || "";
+        const safePrice = parseFloat(price) || 0;
+        const safeId = id || null;
 
         if (type === 'Game') {
+            const testStatus = (isTestGame === 'true' || isTestGame === true || isTestGame == 1) ? 1 : 0;
+            params = [safeName, safeDesc, safePrice];
+
             if (newCover) {
-                db.query("SELECT gameImage FROM Games WHERE gamesID = ?", [id], (err, resImg) => {
-                    if (resImg.length > 0) deleteFileFromStorage(resImg[0].gameImage);
+                db.query("SELECT gameImage FROM Games WHERE gamesID = ?", [safeId], (err, resImg) => {
+                    if (resImg && resImg.length > 0) deleteFileFromStorage(resImg[0].gameImage);
                 });
                 sqlUpdate = "UPDATE Games SET gameName=?, gameDescription=?, gamePrice=?, gameImage=? WHERE gamesID=?";
-                params.push(newCover);
+                params.push(newCover, safeId);
             } else {
                 sqlUpdate = "UPDATE Games SET gameName=?, gameDescription=?, gamePrice=? WHERE gamesID=?";
+                params.push(safeId);
             }
-        } else {
-            // Asset
-            if (newCover) {
-                db.query("SELECT assetImage FROM Assets WHERE assetID = ?", [id], (err, resImg) => {
-                    if (resImg.length > 0) deleteFileFromStorage(resImg[0].assetImage);
-                });
-                sqlUpdate = "UPDATE Assets SET assetName=?, assetDescription=?, assetPrice=?, assetImage=? WHERE assetID=?";
-                params.push(newCover);
-            } else {
-                sqlUpdate = "UPDATE Assets SET assetName=?, assetDescription=?, assetPrice=? WHERE assetID=?";
-            }
-        }
-        params.push(id);
 
-        db.query(sqlUpdate, params, (err) => {
-            if (err) return db.rollback(() => res.status(500).json(err));
+            db.query(sqlUpdate, params, (err) => {
+                if (err) return db.rollback(() => res.status(500).json({ status: "Error", message: err.message }));
 
-            // 2. SİLİNMESİ İSTENEN GALERİ RESİMLERİNİ SİL (YENİ EKLENEN KISIM)
-            const processDeletions = (callback) => {
-                if (idsToDelete.length > 0) {
-                    // Önce dosya adlarını bulup diskten silelim
-                    let sqlFind = type === 'Game' 
-                        ? `SELECT image FROM GameImages WHERE imageID IN (?)`
-                        : `SELECT image FROM AssetImages WHERE imageID IN (?)`;
-                    
-                    db.query(sqlFind, [idsToDelete], (errFind, results) => {
-                        if (errFind) return callback(errFind);
-                        
-                        // Dosyaları diskten sil
-                        results.forEach(img => deleteFileFromStorage(img.image));
+                // TEST PROGRAMI - DOĞRU SÜTUN İSİMLERİ İLE
+                const handleTestProgram = (callback) => {
+                    if (testStatus === 1) {
+                        db.query("SELECT * FROM TestGames WHERE gameID = ?", [safeId], (err, rows) => {
+                            if (err) return callback(err);
+                            if (rows.length === 0) {
+                                db.query("INSERT INTO TestGames (gameID) VALUES (?)", [safeId], callback);
+                            } else {
+                                callback(null);
+                            }
+                        });
+                    } else {
+                        db.query("DELETE FROM TestGames WHERE gameID = ?", [safeId], (err) => {
+                            if (err) return callback(err);
 
-                        // Veritabanından sil
-                        let sqlDel = type === 'Game'
-                            ? `DELETE FROM GameImages WHERE imageID IN (?)`
-                            : `DELETE FROM AssetImages WHERE imageID IN (?)`;
-                        
-                        db.query(sqlDel, [idsToDelete], callback);
-                    });
-                } else {
-                    callback(null);
-                }
-            };
+                            db.query("SELECT image FROM TestImages WHERE gameID = ?", [safeId], (err, imgs) => {
+                                if (!err && imgs) imgs.forEach(i => deleteFileFromStorage(i.image));
+                                db.query("DELETE FROM TestImages WHERE gameID = ?", [safeId], () => { });
+                            });
+                            db.query("SELECT video FROM TestVideos WHERE gameID = ?", [safeId], (err, vids) => {
+                                if (!err && vids) vids.forEach(v => deleteFileFromStorage(v.video));
+                                db.query("DELETE FROM TestVideos WHERE gameID = ?", [safeId], () => { });
+                            });
+                            callback(null);
+                        });
+                    }
+                };
 
-            // 3. YENİ GALERİ RESİMLERİNİ EKLE
-            const addGallery = (callback) => {
-                if (newGallery.length > 0) {
-                    const values = newGallery.map(file => [id, file.filename]);
-                    let sqlInsert = type === 'Game' 
-                        ? "INSERT INTO GameImages (gameID, image) VALUES ?"
-                        : "INSERT INTO AssetImages (assetID, image) VALUES ?";
-                    
-                    db.query(sqlInsert, [values], callback);
-                } else {
-                    callback(null);
-                }
-            };
+                handleTestProgram((err) => {
+                    if (err) return db.rollback(() => res.status(500).json({ status: "Error", message: "Test programı güncellenemedi." }));
 
-            // Zincirleme İşlemler: Silme -> Ekleme -> Commit
-            processDeletions((err) => {
-                if (err) return db.rollback(() => res.status(500).json({error: "Silme hatası"}));
-                
-                addGallery((err) => {
-                    if (err) return db.rollback(() => res.status(500).json({error: "Ekleme hatası"}));
-                    
-                    db.commit((err) => {
-                        if (err) return db.rollback(() => res.status(500).json(err));
-                        res.json({ status: "Success", message: "Güncelleme başarılı!" });
+                    const processDeletions = (callback) => {
+                        if (idsToDelete.length > 0) {
+                            let sqlFind = `SELECT image FROM GameImages WHERE imageID IN (?)`;
+                            db.query(sqlFind, [idsToDelete], (errFind, results) => {
+                                if (errFind) return callback(errFind);
+                                results.forEach(img => deleteFileFromStorage(img.image));
+                                db.query(`DELETE FROM GameImages WHERE imageID IN (?)`, [idsToDelete], callback);
+                            });
+                        } else {
+                            callback(null);
+                        }
+                    };
+
+                    const addGallery = (callback) => {
+                        if (newGallery.length > 0) {
+                            const values = newGallery.map(file => [safeId, file.filename]);
+                            db.query("INSERT INTO GameImages (gameID, image) VALUES ?", [values], callback);
+                        } else {
+                            callback(null);
+                        }
+                    };
+
+                    processDeletions((err) => {
+                        if (err) return db.rollback(() => res.status(500).json({ error: "Silme hatası" }));
+                        addGallery((err) => {
+                            if (err) return db.rollback(() => res.status(500).json({ error: "Ekleme hatası" }));
+                            db.commit((err) => {
+                                if (err) return db.rollback(() => res.status(500).json(err));
+                                res.json({ status: "Success", message: "Güncelleme başarılı!" });
+                            });
+                        });
                     });
                 });
             });
-        });
+
+        } else {
+            params = [safeName, safeDesc, safePrice];
+            if (newCover) {
+                db.query("SELECT assetImage FROM Assets WHERE assetID = ?", [safeId], (err, resImg) => {
+                    if (resImg && resImg.length > 0) deleteFileFromStorage(resImg[0].assetImage);
+                });
+                sqlUpdate = "UPDATE Assets SET assetName=?, assetDescription=?, assetPrice=?, assetImage=? WHERE assetID=?";
+                params.push(newCover, safeId);
+            } else {
+                sqlUpdate = "UPDATE Assets SET assetName=?, assetDescription=?, assetPrice=? WHERE assetID=?";
+                params.push(safeId);
+            }
+
+            db.query(sqlUpdate, params, (err) => {
+                if (err) return db.rollback(() => res.status(500).json({ status: "Error", message: err.message }));
+
+                const processDeletions = (callback) => {
+                    if (idsToDelete.length > 0) {
+                        let sqlFind = `SELECT image FROM AssetImages WHERE imageID IN (?)`;
+                        db.query(sqlFind, [idsToDelete], (errFind, results) => {
+                            if (errFind) return callback(errFind);
+                            results.forEach(img => deleteFileFromStorage(img.image));
+                            db.query(`DELETE FROM AssetImages WHERE imageID IN (?)`, [idsToDelete], callback);
+                        });
+                    } else {
+                        callback(null);
+                    }
+                };
+
+                const addGallery = (callback) => {
+                    if (newGallery.length > 0) {
+                        const values = newGallery.map(file => [safeId, file.filename]);
+                        db.query("INSERT INTO AssetImages (assetID, image) VALUES ?", [values], callback);
+                    } else {
+                        callback(null);
+                    }
+                };
+
+                processDeletions((err) => {
+                    if (err) return db.rollback(() => res.status(500).json({ error: "Silme hatası" }));
+                    addGallery((err) => {
+                        if (err) return db.rollback(() => res.status(500).json({ error: "Ekleme hatası" }));
+                        db.commit((err) => {
+                            if (err) return db.rollback(() => res.status(500).json(err));
+                            res.json({ status: "Success", message: "Güncelleme başarılı!" });
+                        });
+                    });
+                });
+            });
+        }
     });
 });
 
 app.delete('/api/delete-item', (req, res) => {
     const { type, id } = req.body;
     db.beginTransaction((err) => {
-        if(err) return res.status(500).json(err);
-        
-        // 1. ÖNCE DOSYA İSİMLERİNİ ÇEK VE SİL (Sistem Temizliği)
-        let sqlGetFiles = type === 'Game' 
-            ? "SELECT gameImage as cover, gameFile as file FROM Games WHERE gamesID = ?; SELECT image FROM GameImages WHERE gameID = ?" 
+        if (err) return res.status(500).json(err);
+
+        let sqlGetFiles = type === 'Game'
+            ? "SELECT gameImage as cover, gameFile as file FROM Games WHERE gamesID = ?; SELECT image FROM GameImages WHERE gameID = ?"
             : "SELECT assetImage as cover, assetFile as file FROM Assets WHERE assetID = ?; SELECT image FROM AssetImages WHERE assetID = ?";
 
         db.query(sqlGetFiles, [id, id], (err, results) => {
@@ -453,19 +509,31 @@ app.delete('/api/delete-item', (req, res) => {
             if (mainInfo) { deleteFileFromStorage(mainInfo.cover); deleteFileFromStorage(mainInfo.file); }
             if (galleryImages.length > 0) galleryImages.forEach(img => deleteFileFromStorage(img.image));
 
-            // 2. VERİTABANI SİLME İŞLEMLERİ
-            if(type === 'Game') {
+            if (type === 'Game') {
+                db.query("DELETE FROM TestGames WHERE gameID = ?", [id], () => { });
+
+                db.query("SELECT image FROM TestImages WHERE gameID = ?", [id], (err, tImgs) => {
+                    if (!err && tImgs) tImgs.forEach(img => deleteFileFromStorage(img.image));
+                });
+                db.query("SELECT video FROM TestVideos WHERE gameID = ?", [id], (err, tVids) => {
+                    if (!err && tVids) tVids.forEach(vid => deleteFileFromStorage(vid.video));
+                });
+            }
+
+            if (type === 'Game') {
                 db.query("DELETE FROM gametypes_game WHERE game = ?", [id], (err) => {
-                    if(err) return db.rollback(() => res.status(500).json(err));
+                    if (err) return db.rollback(() => res.status(500).json(err));
                     db.query("DELETE FROM UserGameDevelops WHERE game = ?", [id], (err) => {
-                        if(err) return db.rollback(() => res.status(500).json(err));
+                        if (err) return db.rollback(() => res.status(500).json(err));
                         db.query("DELETE FROM UserByGame WHERE game = ?", [id], (err) => {
-                            if(err) return db.rollback(() => res.status(500).json(err));
+                            if (err) return db.rollback(() => res.status(500).json(err));
                             db.query("DELETE FROM GameImages WHERE gameID = ?", [id], (err) => {
-                                if(err) return db.rollback(() => res.status(500).json(err));
+                                if (err) return db.rollback(() => res.status(500).json(err));
+                                db.query("DELETE FROM TestImages WHERE gameID = ?", [id], () => { });
+                                db.query("DELETE FROM TestVideos WHERE gameID = ?", [id], () => { });
                                 db.query("DELETE FROM Games WHERE gamesID = ?", [id], (err) => {
-                                    if(err) return db.rollback(() => res.status(500).json(err));
-                                    db.commit((err) => { if(err) return db.rollback(() => res.status(500).json(err)); res.json({ status: "Success", message: "Oyun silindi." }); });
+                                    if (err) return db.rollback(() => res.status(500).json(err));
+                                    db.commit((err) => { if (err) return db.rollback(() => res.status(500).json(err)); res.json({ status: "Success", message: "Oyun silindi." }); });
                                 });
                             });
                         });
@@ -473,16 +541,16 @@ app.delete('/api/delete-item', (req, res) => {
                 });
             } else if (type === 'Asset') {
                 db.query("DELETE FROM assettypes_asset WHERE asset = ?", [id], (err) => {
-                    if(err) return db.rollback(() => res.status(500).json(err));
+                    if (err) return db.rollback(() => res.status(500).json(err));
                     db.query("DELETE FROM UserAssetDevelops WHERE asset = ?", [id], (err) => {
-                        if(err) return db.rollback(() => res.status(500).json(err));
+                        if (err) return db.rollback(() => res.status(500).json(err));
                         db.query("DELETE FROM UserByAsset WHERE asset = ?", [id], (err) => {
-                            if(err) return db.rollback(() => res.status(500).json(err));
+                            if (err) return db.rollback(() => res.status(500).json(err));
                             db.query("DELETE FROM AssetImages WHERE assetID = ?", [id], (err) => {
-                                if(err) return db.rollback(() => res.status(500).json(err));
+                                if (err) return db.rollback(() => res.status(500).json(err));
                                 db.query("DELETE FROM Assets WHERE assetID = ?", [id], (err) => {
-                                    if(err) return db.rollback(() => res.status(500).json(err));
-                                    db.commit((err) => { if(err) return db.rollback(() => res.status(500).json(err)); res.json({ status: "Success", message: "Asset silindi." }); });
+                                    if (err) return db.rollback(() => res.status(500).json(err));
+                                    db.commit((err) => { if (err) return db.rollback(() => res.status(500).json(err)); res.json({ status: "Success", message: "Asset silindi." }); });
                                 });
                             });
                         });
@@ -496,7 +564,7 @@ app.delete('/api/delete-item', (req, res) => {
 app.get('/api/game-comments/:gameID', (req, res) => {
     const sql = `SELECT GC.*, U.userName FROM GameComments GC JOIN User U ON GC.userID = U.userID WHERE GC.gameID = ? ORDER BY GC.commentDate DESC`;
     db.query(sql, [req.params.gameID], (err, data) => {
-        if(err) return res.status(500).json(err);
+        if (err) return res.status(500).json(err);
         return res.json(data);
     });
 });
@@ -505,7 +573,7 @@ app.post('/api/add-game-comment', (req, res) => {
     const { gameID, userID, commentText } = req.body;
     const sql = "INSERT INTO GameComments (gameID, userID, commentText) VALUES (?, ?, ?)";
     db.query(sql, [gameID, userID, commentText], (err, result) => {
-        if(err) return res.status(500).json(err);
+        if (err) return res.status(500).json(err);
         return res.json({ status: "Success", message: "Yorum eklendi" });
     });
 });
@@ -513,7 +581,7 @@ app.post('/api/add-game-comment', (req, res) => {
 app.get('/api/asset-comments/:assetID', (req, res) => {
     const sql = `SELECT AC.*, U.userName FROM AssetComments AC JOIN User U ON AC.userID = U.userID WHERE AC.assetID = ? ORDER BY AC.commentDate DESC`;
     db.query(sql, [req.params.assetID], (err, data) => {
-        if(err) return res.status(500).json(err);
+        if (err) return res.status(500).json(err);
         return res.json(data);
     });
 });
@@ -522,26 +590,50 @@ app.post('/api/add-asset-comment', (req, res) => {
     const { assetID, userID, commentText } = req.body;
     const sql = "INSERT INTO AssetComments (assetID, userID, commentText) VALUES (?, ?, ?)";
     db.query(sql, [assetID, userID, commentText], (err, result) => {
-        if(err) return res.status(500).json(err);
+        if (err) return res.status(500).json(err);
         return res.json({ status: "Success", message: "Yorum eklendi" });
     });
 });
 
 app.post('/api/buy-game', (req, res) => {
     const { userID, gameID, price } = req.body;
-    const sql = "INSERT INTO userbygame (user, game, price, purchaseDate) VALUES (?, ?, ?, NOW())";
-    db.query(sql, [userID, gameID, price], (err, result) => {
+
+    // ÖNCE KONTROL ET: Kullanıcı bu oyunu daha önce almış mı?
+    db.query("SELECT * FROM userbygame WHERE user = ? AND game = ?", [userID, gameID], (err, rows) => {
         if (err) return res.status(500).json({ status: "Error", message: err.message });
-        return res.json({ status: "Success", message: "Oyun kütüphaneye eklendi." });
+
+        // Kayıt varsa işlemi durdur
+        if (rows.length > 0) {
+            return res.json({ status: "Error", message: "Bu oyuna kütüphanenizde zaten sahipsiniz!" });
+        }
+
+        // Kayıt yoksa normal bir şekilde kütüphaneye ekle
+        const sql = "INSERT INTO userbygame (user, game, price, purchaseDate) VALUES (?, ?, ?, NOW())";
+        db.query(sql, [userID, gameID, price], (err, result) => {
+            if (err) return res.status(500).json({ status: "Error", message: err.message });
+            return res.json({ status: "Success", message: "Oyun kütüphaneye eklendi." });
+        });
     });
 });
 
 app.post('/api/buy-asset', (req, res) => {
     const { userID, assetID, price } = req.body;
-    const sql = "INSERT INTO userbyasset (user, asset, price, purchaseDate) VALUES (?, ?, ?, NOW())";
-    db.query(sql, [userID, assetID, price], (err, result) => {
+
+    // ÖNCE KONTROL ET: Kullanıcı bu asseti daha önce almış mı?
+    db.query("SELECT * FROM userbyasset WHERE user = ? AND asset = ?", [userID, assetID], (err, rows) => {
         if (err) return res.status(500).json({ status: "Error", message: err.message });
-        return res.json({ status: "Success", message: "Asset kütüphaneye eklendi." });
+
+        // Kayıt varsa işlemi durdur
+        if (rows.length > 0) {
+            return res.json({ status: "Error", message: "Bu assete kütüphanenizde zaten sahipsiniz!" });
+        }
+
+        // Kayıt yoksa kütüphaneye ekle
+        const sql = "INSERT INTO userbyasset (user, asset, price, purchaseDate) VALUES (?, ?, ?, NOW())";
+        db.query(sql, [userID, assetID, price], (err, result) => {
+            if (err) return res.status(500).json({ status: "Error", message: err.message });
+            return res.json({ status: "Success", message: "Asset kütüphaneye eklendi." });
+        });
     });
 });
 
@@ -557,7 +649,7 @@ app.get('/api/dashboard-stats/:userID', (req, res) => {
         GROUP BY saleDate ORDER BY saleDate ASC
     `;
     db.query(sql, [userID, userID], (err, data) => {
-        if(err) return res.status(500).json(err);
+        if (err) return res.status(500).json(err);
         return res.json(data);
     });
 });
@@ -571,7 +663,7 @@ app.get('/api/item-sales-details', (req, res) => {
         sql = `SELECT U.userName as buyerName, UBA.purchaseDate, UBA.price FROM userbyasset UBA JOIN user U ON UBA.user = U.userID WHERE UBA.asset = ? ORDER BY UBA.purchaseDate DESC`;
     }
     db.query(sql, [id], (err, data) => {
-        if(err) return res.status(500).json(err);
+        if (err) return res.status(500).json(err);
         return res.json(data);
     });
 });
@@ -586,8 +678,92 @@ app.get('/api/publisher-total-stats/:userID', (req, res) => {
         FROM assets A JOIN userassetdevelops UAD ON A.assetID = UAD.asset WHERE UAD.user = ?
     `;
     db.query(sql, [userID, userID], (err, data) => {
-        if(err) return res.status(500).json(err);
+        if (err) return res.status(500).json(err);
         return res.json(data);
+    });
+});
+
+// ==========================================
+// KÜTÜPHANE VE TEST MEDYASI YÜKLEME
+// ==========================================
+
+// 1. Oyuncunun Sahip Olduğu Kütüphaneyi Çekme
+app.get('/api/my-library/:userID', (req, res) => {
+    const userID = req.params.userID;
+
+    // GROUP BY ile aynı oyunların tekrar etmesini kesin olarak engelliyoruz
+    const sqlGames = `
+        SELECT G.gamesID as itemID, G.gameName as itemName, G.gameImage as itemImage, 'Game' as itemType, 
+        MAX(IF(TG.gameId IS NOT NULL, 1, 0)) as isTestGame 
+        FROM userbygame UBG 
+        JOIN Games G ON UBG.game = G.gamesID 
+        LEFT JOIN TestGames TG ON G.gamesID = TG.gameId
+        WHERE UBG.user = ?
+        GROUP BY G.gamesID, G.gameName, G.gameImage
+        ORDER BY MAX(UBG.purchaseDate) DESC
+    `;
+
+    // GROUP BY ile aynı assetlerin tekrar etmesini kesin olarak engelliyoruz
+    const sqlAssets = `
+        SELECT A.assetID as itemID, A.assetName as itemName, A.assetImage as itemImage, 'Asset' as itemType 
+        FROM userbyasset UBA 
+        JOIN Assets A ON UBA.asset = A.assetID 
+        WHERE UBA.user = ?
+        GROUP BY A.assetID, A.assetName, A.assetImage
+        ORDER BY MAX(UBA.purchaseDate) DESC
+    `;
+
+    db.query(sqlGames, [userID], (err, games) => {
+        if (err) return res.status(500).json({ error: err.message });
+
+        db.query(sqlAssets, [userID], (err, assets) => {
+            if (err) return res.status(500).json({ error: err.message });
+
+            res.json({ games: games || [], assets: assets || [] });
+        });
+    });
+});
+
+// 2. Test Programı İçin Medya Yükleme (Resim veya Video)
+app.post('/api/upload-test-media', upload.single('mediaFile'), (req, res) => {
+    const { gameId, userId, mediaType } = req.body;
+    const file = req.file;
+
+    if (!file) return res.status(400).json({ status: "Error", message: "Dosya bulunamadı" });
+
+    // GERÇEK ŞEMAYA GÖRE: gameId, userId, imagePath/videoPath
+    if (mediaType === 'image') {
+        db.query("INSERT INTO TestImages (gameId, userId, imagePath) VALUES (?, ?, ?)", [gameId, userId, file.filename], (err) => {
+            if (err) {
+                console.error("SQL Resim Ekleme Hatası:", err);
+                return res.status(500).json({ status: "Error", message: err.message });
+            }
+            res.json({ status: "Success", message: "Ekran görüntüsü başarıyla iletildi." });
+        });
+    } else {
+        db.query("INSERT INTO TestVideos (gameId, userId, videoPath) VALUES (?, ?, ?)", [gameId, userId, file.filename], (err) => {
+            if (err) {
+                console.error("SQL Video Ekleme Hatası:", err);
+                return res.status(500).json({ status: "Error", message: err.message });
+            }
+            res.json({ status: "Success", message: "Ekran kaydı başarıyla iletildi." });
+        });
+    }
+});
+
+app.get('/api/test-media/:gameID', (req, res) => {
+    const gameID = req.params.gameID;
+    db.query("SELECT id, gameId, userId, imagePath AS image, createdAt FROM TestImages WHERE gameId = ?", [gameID], (err1, images) => {
+        if (err1) console.error("Test resimleri çekilemedi:", err1);
+
+        db.query("SELECT id, gameId, userId, videoPath AS video, createdAt FROM TestVideos WHERE gameId = ?", [gameID], (err2, videos) => {
+            if (err2) console.error("Test videoları çekilemedi:", err2);
+
+            res.json({
+                images: images || [],
+                videos: videos || []
+            });
+        });
     });
 });
 
