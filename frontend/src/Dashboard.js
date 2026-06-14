@@ -733,6 +733,7 @@ function Dashboard() {
             )}
 
             {/* 5. YENİ EKLENEN: TEST MEDYALARINI (FOTO/VİDEO) GÖSTEREN MODAL */}
+            {/* 5. YENİ EKLENEN: TEST MEDYALARINI (FOTO/VİDEO) GÖSTEREN MODAL */}
             {showTestMediaModal && (
                 <div className="modal-overlay" onClick={() => setShowTestMediaModal(false)}>
                     <div className="modal-content large-modal" onClick={(e) => e.stopPropagation()} style={{ maxHeight: '90vh', overflowY: 'auto', minWidth: '60vw' }}>
@@ -752,15 +753,31 @@ function Dashboard() {
                                 {testImages.length === 0 ? (
                                     <p style={{ color: '#aaa', fontSize: '13px', fontStyle: 'italic', marginBottom: '30px' }}>Bu oyun için henüz fotoğraf gönderilmemiş.</p>
                                 ) : (
-                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '15px', marginBottom: '40px' }}>
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px', marginBottom: '40px' }}>
                                         {testImages.map(img => (
-                                            <div key={img.id || img.testImageID} style={{ backgroundColor: '#161625', padding: '10px', borderRadius: '8px', border: '1px solid #333' }}>
-                                                <img
-                                                    src={getImageSrc(img.imagePath || img.image)}
-                                                    alt="Test Fotoğrafı"
-                                                    style={{ width: '100%', height: '120px', objectFit: 'cover', borderRadius: '5px', border: '1px solid #555', cursor: 'pointer' }}
-                                                    onClick={() => setFullScreenImage(getImageSrc(img.imagePath || img.image))}
-                                                />                                            </div>
+                                            <div key={img.id || img.testImageID} style={{ backgroundColor: '#161625', borderRadius: '8px', border: '1px solid #333', overflow: 'hidden' }}>
+
+                                                {/* Resim Kutusu */}
+                                                <div style={{ backgroundColor: '#000', height: '180px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                                                    <img
+                                                        src={getImageSrc(img.imagePath || img.image)}
+                                                        alt="Test Fotoğrafı"
+                                                        style={{ width: '100%', height: '100%', objectFit: 'contain', cursor: 'pointer' }}
+                                                        onClick={() => setFullScreenImage(getImageSrc(img.imagePath || img.image))}
+                                                    />
+                                                </div>
+
+                                                {/* İçerik / Açıklama Kutusu */}
+                                                <div style={{ padding: '15px' }}>
+                                                    <h5 style={{ color: '#5b5bfe', fontSize: '13px', margin: '0 0 5px 0' }}>Oyuncu Geri Bildirimi:</h5>
+                                                    <p style={{ color: '#fff', fontSize: '14px', margin: '0 0 10px 0', lineHeight: '1.5' }}>
+                                                        {img.description && img.description.trim() !== '' ? img.description : <span style={{ color: '#666', fontStyle: 'italic' }}>Açıklama girilmemiş.</span>}
+                                                    </p>
+                                                    <p style={{ color: '#aaa', fontSize: '11px', margin: 0, textAlign: 'right' }}>
+                                                        {new Date(img.createdAt).toLocaleString('tr-TR')}
+                                                    </p>
+                                                </div>
+                                            </div>
                                         ))}
                                     </div>
                                 )}
@@ -772,10 +789,27 @@ function Dashboard() {
                                 {testVideos.length === 0 ? (
                                     <p style={{ color: '#aaa', fontSize: '13px', fontStyle: 'italic' }}>Bu oyun için henüz video gönderilmemiş.</p>
                                 ) : (
-                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '15px' }}>
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>
                                         {testVideos.map(vid => (
-                                            <div key={vid.id || vid.testVideoID} style={{ backgroundColor: '#161625', padding: '10px', borderRadius: '8px', border: '1px solid #333' }}>
-                                                <video src={`http://localhost:3001/uploads/${vid.videoPath || vid.video}`} controls style={{ width: '100%', height: '160px', backgroundColor: '#000', borderRadius: '5px', border: '1px solid #555' }}></video>
+                                            <div key={vid.id || vid.testVideoID} style={{ backgroundColor: '#161625', borderRadius: '8px', border: '1px solid #333', overflow: 'hidden' }}>
+
+                                                {/* Video Kutusu */}
+                                                <video
+                                                    src={`http://localhost:3001/uploads/${vid.videoPath || vid.video}`}
+                                                    controls
+                                                    style={{ width: '100%', height: '200px', backgroundColor: '#000', objectFit: 'contain' }}
+                                                ></video>
+
+                                                {/* İçerik / Açıklama Kutusu */}
+                                                <div style={{ padding: '15px' }}>
+                                                    <h5 style={{ color: '#e94560', fontSize: '13px', margin: '0 0 5px 0' }}>Oyuncu Geri Bildirimi:</h5>
+                                                    <p style={{ color: '#fff', fontSize: '14px', margin: '0 0 10px 0', lineHeight: '1.5' }}>
+                                                        {vid.description && vid.description.trim() !== '' ? vid.description : <span style={{ color: '#666', fontStyle: 'italic' }}>Açıklama girilmemiş.</span>}
+                                                    </p>
+                                                    <p style={{ color: '#aaa', fontSize: '11px', margin: 0, textAlign: 'right' }}>
+                                                        {new Date(vid.createdAt).toLocaleString('tr-TR')}
+                                                    </p>
+                                                </div>
                                             </div>
                                         ))}
                                     </div>
@@ -787,22 +821,22 @@ function Dashboard() {
             )}
 
             {fullScreenImage && (
-                <div 
-                    className="modal-overlay" 
-                    style={{ zIndex: 9999, backgroundColor: 'rgba(0,0,0,0.9)' }} 
+                <div
+                    className="modal-overlay"
+                    style={{ zIndex: 9999, backgroundColor: 'rgba(0,0,0,0.9)' }}
                     onClick={() => setFullScreenImage(null)}
                 >
                     <div style={{ position: 'relative', width: '90%', height: '90%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                        <button 
-                            onClick={() => setFullScreenImage(null)} 
+                        <button
+                            onClick={() => setFullScreenImage(null)}
                             style={{ position: 'absolute', top: '0px', right: '20px', background: 'none', border: 'none', color: '#fff', fontSize: '40px', cursor: 'pointer', zIndex: 10000 }}
                         >
                             &times;
                         </button>
-                        <img 
-                            src={fullScreenImage} 
-                            alt="Tam Ekran" 
-                            style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', borderRadius: '8px', boxShadow: '0 0 20px rgba(0,0,0,0.5)' }} 
+                        <img
+                            src={fullScreenImage}
+                            alt="Tam Ekran"
+                            style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', borderRadius: '8px', boxShadow: '0 0 20px rgba(0,0,0,0.5)' }}
                         />
                     </div>
                 </div>

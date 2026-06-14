@@ -389,11 +389,11 @@ app.put('/api/update-item', upload.fields([
                         db.query("DELETE FROM TestGames WHERE gameID = ?", [safeId], (err) => {
                             if (err) return callback(err);
 
-                            db.query("SELECT image FROM TestImages WHERE gameID = ?", [safeId], (err, imgs) => {
+                            db.query("SELECT imagePath as image FROM TestImages WHERE gameID = ?", [safeId], (err, imgs) => {
                                 if (!err && imgs) imgs.forEach(i => deleteFileFromStorage(i.image));
                                 db.query("DELETE FROM TestImages WHERE gameID = ?", [safeId], () => { });
                             });
-                            db.query("SELECT video FROM TestVideos WHERE gameID = ?", [safeId], (err, vids) => {
+                            db.query("SELECT videoPath as video FROM TestVideos WHERE gameID = ?", [safeId], (err, vids) => {
                                 if (!err && vids) vids.forEach(v => deleteFileFromStorage(v.video));
                                 db.query("DELETE FROM TestVideos WHERE gameID = ?", [safeId], () => { });
                             });
@@ -512,10 +512,10 @@ app.delete('/api/delete-item', (req, res) => {
             if (type === 'Game') {
                 db.query("DELETE FROM TestGames WHERE gameID = ?", [id], () => { });
 
-                db.query("SELECT image FROM TestImages WHERE gameID = ?", [id], (err, tImgs) => {
+                db.query("SELECT imagePath as image FROM TestImages WHERE gameID = ?", [id], (err, tImgs) => {
                     if (!err && tImgs) tImgs.forEach(img => deleteFileFromStorage(img.image));
                 });
-                db.query("SELECT video FROM TestVideos WHERE gameID = ?", [id], (err, tVids) => {
+                db.query("SELECT videoPath as video FROM TestVideos WHERE gameID = ?", [id], (err, tVids) => {
                     if (!err && tVids) tVids.forEach(vid => deleteFileFromStorage(vid.video));
                 });
             }
@@ -726,37 +726,45 @@ app.get('/api/my-library/:userID', (req, res) => {
 
 // 2. Test Programı İçin Medya Yükleme (Resim veya Video)
 app.post('/api/upload-test-media', upload.single('mediaFile'), (req, res) => {
-    const { gameId, userId, mediaType } = req.body;
+    // BURADAKİ DESCRIPTION EKLENTİSİNİ SANA ÖNCEKİ ADIMLARDA YAPMIŞTIK
+    // EĞER HALA NULL KAYDEDİYORSA AŞAĞIDAKİ PARAMETRELERİ GÜNCELLEYECEĞİM
+    const { gameId, userId, mediaType, description } = req.body;
     const file = req.file;
 
-    if (!file) return res.status(400).json({ status: "Error", message: "Dosya bulunamadı" });
+    // Güvenlik kilidi (Boş veya undefined gelmesini engellemek için)
+    if (!gameId || !userId || !file || gameId === 'undefined' || userId === 'undefined') {
+        return res.status(400).json({ status: "Error", message: "Eksik veri gönderildi." });
+    }
 
-    // GERÇEK ŞEMAYA GÖRE: gameId, userId, imagePath/videoPath
+    // GERÇEK ŞEMAYA GÖRE: gameId, userId, imagePath/videoPath, description
     if (mediaType === 'image') {
-        db.query("INSERT INTO TestImages (gameId, userId, imagePath) VALUES (?, ?, ?)", [gameId, userId, file.filename], (err) => {
+        // description alanını veritabanına NULL gitmesin diye string'e zorluyoruz
+        db.query("INSERT INTO TestImages (gameId, userId, imagePath, description) VALUES (?, ?, ?, ?)", [gameId, userId, file.filename, description || ''], (err) => {
             if (err) {
                 console.error("SQL Resim Ekleme Hatası:", err);
                 return res.status(500).json({ status: "Error", message: err.message });
             }
-            res.json({ status: "Success", message: "Ekran görüntüsü başarıyla iletildi." });
+            res.json({ status: "Success", message: "Ekran görüntüsü ve açıklama başarıyla iletildi." });
         });
     } else {
-        db.query("INSERT INTO TestVideos (gameId, userId, videoPath) VALUES (?, ?, ?)", [gameId, userId, file.filename], (err) => {
+        db.query("INSERT INTO TestVideos (gameId, userId, videoPath, description) VALUES (?, ?, ?, ?)", [gameId, userId, file.filename, description || ''], (err) => {
             if (err) {
                 console.error("SQL Video Ekleme Hatası:", err);
                 return res.status(500).json({ status: "Error", message: err.message });
             }
-            res.json({ status: "Success", message: "Ekran kaydı başarıyla iletildi." });
+            res.json({ status: "Success", message: "Ekran kaydı ve açıklama başarıyla iletildi." });
         });
     }
 });
 
 app.get('/api/test-media/:gameID', (req, res) => {
     const gameID = req.params.gameID;
-    db.query("SELECT id, gameId, userId, imagePath AS image, createdAt FROM TestImages WHERE gameId = ?", [gameID], (err1, images) => {
+    
+    // BURADA DA DESCRIPTION ALANINI ÇEKMEYİ EKLİYORUZ
+    db.query("SELECT id, gameId, userId, imagePath AS image, description, createdAt FROM TestImages WHERE gameId = ?", [gameID], (err1, images) => {
         if (err1) console.error("Test resimleri çekilemedi:", err1);
 
-        db.query("SELECT id, gameId, userId, videoPath AS video, createdAt FROM TestVideos WHERE gameId = ?", [gameID], (err2, videos) => {
+        db.query("SELECT id, gameId, userId, videoPath AS video, description, createdAt FROM TestVideos WHERE gameId = ?", [gameID], (err2, videos) => {
             if (err2) console.error("Test videoları çekilemedi:", err2);
 
             res.json({
