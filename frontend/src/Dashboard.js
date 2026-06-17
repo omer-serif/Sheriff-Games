@@ -6,8 +6,7 @@ import {
 import Navbar from './navbar';
 import './App.css';
 
-const FALLBACK_IMAGE = "data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22300%22%20height%3D%22150%22%20viewBox%3D%220%200%20300%20150%22%3E%3Crect%20fill%3D%22%2322223b%22%20width%3D%22300%22%20height%3D%22150%22%2F%3E%3Ctext%20fill%3D%22%23e94560%22%20font-family%3D%22sans-serif%22%20font-size%3D%2220%22%20dy%3D%2210.5%22%20font-weight%3D%22bold%22%20x%3D%2250%25%22%20y%3D%2250%25%22%20text-anchor%3D%22middle%22%3EResim%20Yok%3C%2Ftext%3E%3C%2Fsvg%3E";
-
+const FALLBACK_IMAGE = "/images/sheriffGamesLogo.png";
 function Dashboard() {
     const navigate = useNavigate();
     const [user, setUser] = useState(null);
@@ -99,7 +98,7 @@ function Dashboard() {
 
     const getImageSrc = (imageName) => {
         if (!imageName || imageName === "null" || imageName === "") return FALLBACK_IMAGE;
-        if (imageName.startsWith("http")) return FALLBACK_IMAGE;
+        if (imageName.startsWith("http")) return imageName;
         return `http://localhost:3001/uploads/${imageName}`;
     };
 
@@ -312,12 +311,9 @@ function Dashboard() {
         setTestMediaLoading(true);
         setShowTestMediaModal(true);
 
-        // Not: Backend rotan farklıysa burayı kendi router yapına göre ufakça değiştirebilirsin
-        // Genelde mobilde test-media olarak tanımlamıştık.
         fetch(`http://localhost:3001/api/test-media/${game.gamesID}`)
             .then(res => res.json())
             .then(data => {
-                // Backend'den images ve videos array'leri dönmesini bekliyoruz
                 setTestImages(data.images || []);
                 setTestVideos(data.videos || []);
             })
@@ -733,7 +729,6 @@ function Dashboard() {
             )}
 
             {/* 5. YENİ EKLENEN: TEST MEDYALARINI (FOTO/VİDEO) GÖSTEREN MODAL */}
-            {/* 5. YENİ EKLENEN: TEST MEDYALARINI (FOTO/VİDEO) GÖSTEREN MODAL */}
             {showTestMediaModal && (
                 <div className="modal-overlay" onClick={() => setShowTestMediaModal(false)}>
                     <div className="modal-content large-modal" onClick={(e) => e.stopPropagation()} style={{ maxHeight: '90vh', overflowY: 'auto', minWidth: '60vw' }}>
@@ -757,11 +752,13 @@ function Dashboard() {
                                         {testImages.map(img => (
                                             <div key={img.id || img.testImageID} style={{ backgroundColor: '#161625', borderRadius: '8px', border: '1px solid #333', overflow: 'hidden' }}>
 
-                                                {/* Resim Kutusu */}
+                                                {/* 🔥 DÜZELTME YAPILAN KISIM (Resim Kutusu) */}
                                                 <div style={{ backgroundColor: '#000', height: '180px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                                                     <img
+                                                        // Doğrudan getImageSrc fonksiyonu kullanılarak mobilden veya webden gelen tüm yollar garantiye alındı
                                                         src={getImageSrc(img.imagePath || img.image)}
                                                         alt="Test Fotoğrafı"
+                                                        onError={handleImageError}
                                                         style={{ width: '100%', height: '100%', objectFit: 'contain', cursor: 'pointer' }}
                                                         onClick={() => setFullScreenImage(getImageSrc(img.imagePath || img.image))}
                                                     />
@@ -806,7 +803,7 @@ function Dashboard() {
                                                     <p style={{ color: '#fff', fontSize: '14px', margin: '0 0 10px 0', lineHeight: '1.5' }}>
                                                         {vid.description && vid.description.trim() !== '' ? vid.description : <span style={{ color: '#666', fontStyle: 'italic' }}>Açıklama girilmemiş.</span>}
                                                     </p>
-                                                    <p style={{ color: '#aaa', fontSize: '11px', margin: 0, textAlign: 'right' }}>
+                                                    <p style={{ color: '#aaa', fontSize: '11px', margin: '0', textAlign: 'right' }}>
                                                         {new Date(vid.createdAt).toLocaleString('tr-TR')}
                                                     </p>
                                                 </div>
@@ -823,26 +820,29 @@ function Dashboard() {
             {fullScreenImage && (
                 <div
                     className="modal-overlay"
-                    style={{ zIndex: 9999, backgroundColor: 'rgba(0,0,0,0.9)' }}
+                    style={{ zIndex: 9999, backgroundColor: 'rgba(0,0,0,0.95)' }}
                     onClick={() => setFullScreenImage(null)}
                 >
-                    <div style={{ position: 'relative', width: '90%', height: '90%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                    {/* Tıklamanın dışarı taşmasını ve modalı kapatmasını engelliyoruz */}
+                    <div style={{ position: 'relative', width: '90%', height: '90%', display: 'flex', justifyContent: 'center', alignItems: 'center' }} onClick={(e) => e.stopPropagation()}>
                         <button
                             onClick={() => setFullScreenImage(null)}
-                            style={{ position: 'absolute', top: '0px', right: '20px', background: 'none', border: 'none', color: '#fff', fontSize: '40px', cursor: 'pointer', zIndex: 10000 }}
+                            style={{ position: 'absolute', top: '10px', right: '10px', background: 'none', border: 'none', color: '#e94560', fontSize: '40px', cursor: 'pointer', zIndex: 10000 }}
                         >
                             &times;
                         </button>
                         <img
                             src={fullScreenImage}
                             alt="Tam Ekran"
-                            style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', borderRadius: '8px', boxShadow: '0 0 20px rgba(0,0,0,0.5)' }}
+                            // Resim bozuksa metalik şerif logomuz devreye girsin
+                            onError={(e) => { e.target.onerror = null; e.target.src = FALLBACK_IMAGE; }}
+                            style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: '8px', boxShadow: '0 0 20px rgba(0,0,0,0.5)' }}
                         />
                     </div>
                 </div>
             )}
 
-            <footer className="footer"><p>&copy; 2025 Sheriff Games.</p></footer>
+            <footer className="footer"><p>&copy; 2026 Sheriff Games.</p></footer>
         </div>
     );
 }

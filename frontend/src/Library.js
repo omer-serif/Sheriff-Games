@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import Navbar from './navbar';
 import './App.css'; 
 
-const FALLBACK_IMAGE = "data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22300%22%20height%3D%22150%22%20viewBox%3D%220%200%20300%20150%22%3E%3Crect%20fill%3D%22%2322223b%22%20width%3D%22300%22%20height%3D%22150%22%2F%3E%3Ctext%20fill%3D%22%23e94560%22%20font-family%3D%22sans-serif%22%20font-size%3D%2220%22%20dy%3D%2210.5%22%20font-weight%3D%22bold%22%20x%3D%2250%25%22%20y%3D%2250%25%22%20text-anchor%3D%22middle%22%3EResim%20Yok%3C%2Ftext%3E%3C%2Fsvg%3E";
+// 🔥 DÜZELTME 1: Çirkin SVG silindi, yerine metalik logomuz eklendi.
+const FALLBACK_IMAGE = "/images/sheriffGamesLogo.png";
 
 function Library() {
     const navigate = useNavigate();
@@ -47,7 +48,8 @@ function Library() {
 
     const getImageSrc = (imageName) => {
         if (!imageName || imageName === "null" || imageName === "") return FALLBACK_IMAGE;
-        if (imageName.startsWith("http")) return FALLBACK_IMAGE;
+        // DÜZELTME: Eğer resim dış bir linkse (http) fallback yapma, direkt linki kullan
+        if (imageName.startsWith("http")) return imageName;
         return `http://localhost:3001/uploads/${imageName}`;
     };
 
@@ -125,8 +127,9 @@ function Library() {
             <div className="dashboard-grid">
                 {items.map((item, index) => (
                     <div key={`${item.itemType}-${item.itemID}-${index}`} className="dash-item-card">
-                        <div className="dash-card-img-wrapper" style={{ height: '150px' }}>
-                            <img src={getImageSrc(item.itemImage)} alt={item.itemName} className="dash-card-img" onError={handleImageError} style={{ height: '100%', objectFit: 'cover' }} />
+                        {/* Resmin arkasına siyah arka plan eklendi ki logo şık dursun */}
+                        <div className="dash-card-img-wrapper" style={{ height: '150px', backgroundColor: '#161625' }}>
+                            <img src={getImageSrc(item.itemImage)} alt={item.itemName} className="dash-card-img" onError={handleImageError} style={{ height: '100%', width: '100%', objectFit: 'cover' }} />
                         </div>
                         <div className="dash-card-body">
                             <h4 style={{ fontSize: '18px', marginBottom: '15px' }}>{item.itemName}</h4>
@@ -135,8 +138,17 @@ function Library() {
                                 📥 {item.itemType === 'Game' ? 'Oyunu' : 'Asseti'} İndir
                             </button>
 
+                            {/* 🔥 DÜZELTME 2: Detay Sayfasına Git Butonu Eklendi */}
+                            <button 
+                                className="btn-dash" 
+                                style={{ width: '100%', marginBottom: '10px', backgroundColor: 'rgba(76, 175, 80, 0.15)', color: '#4caf50', border: '1px solid #4caf50', fontWeight: 'bold', cursor: 'pointer', padding: '10px', borderRadius: '5px' }} 
+                                onClick={() => navigate(`/${item.itemType === 'Game' ? 'game' : 'asset'}/${item.itemID}`)}
+                            >
+                                👁️ {item.itemType === 'Game' ? 'Oyun' : 'Asset'} Sayfasına Git
+                            </button>
+
                             {item.itemType === 'Game' && item.isTestGame === 1 && (
-                                <button className="btn-dash" style={{ width: '100%', backgroundColor: 'rgba(91,91,254,0.15)', color: '#5b5bfe', border: '1px solid #5b5bfe', fontWeight: 'bold' }} onClick={() => openTestModal(item)}>
+                                <button className="btn-dash" style={{ width: '100%', backgroundColor: 'rgba(91,91,254,0.15)', color: '#5b5bfe', border: '1px solid #5b5bfe', fontWeight: 'bold', padding: '10px', borderRadius: '5px', cursor: 'pointer' }} onClick={() => openTestModal(item)}>
                                     <i className="fas fa-flask"></i> Test Görevi
                                 </button>
                             )}
